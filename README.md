@@ -23,7 +23,7 @@ A proof-of-concept NetDevOps pipeline where:
 - **CI/CD** (GitHub Actions) runs the full pipeline on every PR
 - **Telemetry** streams from devices via gNMI to Prometheus + Grafana
 
-The virtual fabric is a 9-device spine-leaf topology running Arista
+The virtual fabric is a 6-device spine-leaf topology running Arista
 cEOS, Nokia SR Linux, and FRR intentionally multi-vendor to
 demonstrate vendor-abstracted automation.
 

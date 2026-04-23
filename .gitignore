@@ -1,8 +1,66 @@
-# macOS specific files
+# ---- OS / editor ----
 .DS_Store
-cEOS-lab-*.tar
-cEOS-lab-*.tar.xz
-cEOSarm-lab-*.tar
-cEOSarm*.tar.xz
-.devcontainer/ceos-auto-download/.env
+Thumbs.db
+*.swp
+*.swo
 *.bak
+*~
+
+# ---- IDE ----
+.vscode/
+.idea/
+*.iml
+
+# ---- logs / temp / cache ----
+*.log
+logs/
+*.tmp
+*.cache
+.cache/
+tmp/
+*.pid
+
+# ---- secrets / env ----
+.env
+.env.*
+*.pem
+*.key
+*.crt
+secrets/
+api-keys.json
+
+# ---- dependencies ----
+node_modules/
+vendor/
+__pycache__/
+*.pyc
+
+# ---- build artifacts ----
+build/
+dist/
+out/
+target/
+*.o
+*.exe
+
+# ---- containerlab ----
+# runtime directory clab generates on `deploy` (flash/, config/, .tls/,
+# inventories, topology-data.json, SSH host keys, TLS material, startup-configs)
+clab-*/
+# topology file backups
+*.clab.yml.bak
+
+# ---- ansible / terraform ----
+*.retry
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# ---- docker ----
+docker-build/
+docker-cache/
+*.tar
+*.tar.xz
+docker-compose.override.yml
+*.override.yml

@@ -1,0 +1,53 @@
+name: Network-Automation-Project
+prefix: ""
+
+topology:
+  kinds:
+    arista_ceos:
+      image: ceos:4.36.0F
+    nokia_srlinux:
+      image: ghcr.io/nokia/srlinux:latest
+    linux:
+      image: alpine:latest
+
+  nodes:
+    spine1:
+      kind: arista_ceos
+    spine2:
+      kind: arista_ceos
+
+    leaf1:
+      kind: arista_ceos
+    leaf2:
+      kind: arista_ceos
+    leaf3:
+      kind: nokia_srlinux
+
+    edge1:
+      kind: linux
+      image: frrouting/frr:latest
+      binds:
+        - configs/edge1/daemons:/etc/frr/daemons
+        - configs/edge1/frr.conf:/etc/frr/frr.conf
+
+
+    server1:
+      kind: linux
+    server2:
+      kind: linux
+    server3:
+      kind: linux
+
+  links:
+    - endpoints: ["spine1:eth1", "leaf1:eth1"]
+    - endpoints: ["spine1:eth2", "leaf2:eth1"]
+    - endpoints: ["spine1:eth3", "leaf3:ethernet-1/1"]
+    - endpoints: ["spine1:eth4", "edge1:eth1"]
+
+    - endpoints: ["spine2:eth1", "leaf1:eth2"]
+    - endpoints: ["spine2:eth2", "leaf2:eth2"]
+    - endpoints: ["spine2:eth3", "leaf3:ethernet-1/2"]
+
+    - endpoints: ["leaf1:eth3", "server1:eth1"]
+    - endpoints: ["leaf2:eth3", "server2:eth1"]
+    - endpoints: ["leaf3:ethernet-1/3", "server3:eth1"]

@@ -27,8 +27,8 @@ topology:
       kind: linux
       image: frrouting/frr:latest
       binds:
-        - configs/edge1/daemons:/etc/frr/daemons
-        - configs/edge1/frr.conf:/etc/frr/frr.conf
+        - ../configs/edge1/daemons:/etc/frr/daemons
+        - ../configs/edge1/frr.conf:/etc/frr/frr.conf
 
 
     server1:

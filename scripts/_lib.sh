@@ -39,3 +39,25 @@ clab_flags() {
 require_topo() {
   [[ -f "$TOPO" ]] || { err "topology not found: $TOPO"; exit 1; }
 }
+
+# require a command or exit with install hint
+require_cmd() {
+  local cmd="$1" hint="${2:-}"
+  command -v "$cmd" >/dev/null 2>&1 || {
+    err "'$cmd' not found${hint:+. install: $hint}"
+    exit 1
+  }
+}
+
+# list nodes from topology: "name kind" per line, tab-separated
+# caller can parse with: while IFS=$'\t' read -r name kind; do ...
+topology_nodes() {
+  yq -r '.topology.nodes | to_entries | .[] | "\(.key)\t\(.value.kind)"' "$TOPO"
+}
+
+# derive the clab runtime dir from the topology's `name:` field
+runtime_dir() {
+  local lab_name
+  lab_name="$(yq -r '.name' "$TOPO")"
+  printf '%s/topology/clab-%s' "$REPO_ROOT" "$lab_name"
+}

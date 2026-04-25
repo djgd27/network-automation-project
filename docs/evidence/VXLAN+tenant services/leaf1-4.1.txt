@@ -1,0 +1,23 @@
+ssh admin@leaf1
+Warning: Permanently added 'leaf1' (ED25519) to the list of known hosts.
+(admin@leaf1) Password: 
+Last login: Sat Apr 25 17:49:10 2026 from 172.20.20.1
+leaf1>en
+leaf1#sh vrf
+Maximum number of VRFs allowed: 1024
+   VRF            Protocols       State         Interfaces        
+-------------- --------------- ---------------- ------------------
+   default        IPv4            routing       Et1, Et2, Lo0, Ma0
+   default        IPv6            no routing                      
+   TENANT_A       IPv4            routing                    
+   TENANT_A       IPv6            no routing                      
+
+leaf1#sh bgp evpn sum
+BGP summary information for VRF default
+Router identifier 10.0.0.11, local AS number 65101
+Neighbor Status Codes: m - Under maintenance
+  Description              Neighbor V AS           MsgRcvd   MsgSent  InQ OutQ  Up/Down State   PfxRcd PfxAcc PfxAdv
+  spine1                   10.1.1.0 4 65001           1744      1727    0    0 21:25:20 Estab   0      0      0
+  spine2                   10.1.2.0 4 65002           1756      1748    0    0 21:25:20 Estab   0      0      0
+leaf1#exit
+Connection to leaf1 closed.

@@ -1,0 +1,14 @@
+docker exec server2 ping -c 4 10.100.0.101
+PING 10.100.0.101 (10.100.0.101): 56 data bytes
+64 bytes from 10.100.0.101: seq=0 ttl=64 time=6.529 ms
+64 bytes from 10.100.0.101: seq=1 ttl=64 time=5.630 ms
+64 bytes from 10.100.0.101: seq=2 ttl=64 time=7.028 ms
+64 bytes from 10.100.0.101: seq=3 ttl=64 time=5.687 ms
+
+--- 10.100.0.101 ping statistics ---
+4 packets transmitted, 4 packets received, 0% packet loss
+round-trip min/avg/max = 5.630/6.218/7.028 ms
+
+docker exec server2 ip neigh
+10.100.0.101 dev eth1 lladdr aa:c1:ab:40:50:30 ref 1 used 0/0/0 probes 1 REACHABLE
+10.100.0.1 dev eth1  used 0/0/0 probes 3 FAILED

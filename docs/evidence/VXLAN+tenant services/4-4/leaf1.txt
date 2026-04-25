@@ -1,0 +1,43 @@
+ssh admin@leaf1
+Warning: Permanently added 'leaf1' (ED25519) to the list of known hosts.
+(admin@leaf1) Password: 
+Last login: Sat Apr 25 20:26:31 2026 from 172.20.20.1
+leaf1>en
+leaf1#sh vxlan vtep 
+Remote VTEPS for Vxlan1:
+
+VTEP            Tunnel Type(s)
+--------------- --------------
+10.0.0.12       flood, unicast
+
+Total number of remote VTEPS:  1
+leaf1#sh bgp evpn sum
+BGP summary information for VRF default
+Router identifier 10.0.0.11, local AS number 65101
+Neighbor Status Codes: m - Under maintenance
+  Description              Neighbor V AS           MsgRcvd   MsgSent  InQ OutQ  Up/Down State   PfxRcd PfxAcc PfxAdv
+  spine1                   10.1.1.0 4 65001           2086      2075    0    0    1d02h Estab   3      3      6
+  spine2                   10.1.2.0 4 65002           2100      2088    0    0    1d02h Estab   3      3      3
+leaf1#show bgp evpn route-type mac-ip
+BGP routing table information for VRF default
+Router identifier 10.0.0.11, local AS number 65101
+Route status codes: * - valid, > - active, S - Stale, E - ECMP head, e - ECMP
+                    c - Contributing to ECMP, % - Pending best path selection
+Origin codes: i - IGP, e - EGP, ? - incomplete
+AS Path Attributes: Or-ID - Originator ID, C-LST - Cluster List, LL Nexthop - Link Local Nexthop
+
+          Network                Next Hop              Metric  LocPref Weight  Path
+ * >      RD: 10.0.0.11:10100 mac-ip aac1.ab40.5030
+                                 -                     -       -       0       i
+ * >      RD: 10.0.0.11:10100 mac-ip aac1.ab40.5030 10.100.0.101
+                                 -                     -       -       0       i
+ * >Ec    RD: 10.0.0.12:10100 mac-ip aac1.ab83.37be
+                                 10.0.0.12             -       100     0       65002 65102 i
+ *  ec    RD: 10.0.0.12:10100 mac-ip aac1.ab83.37be
+                                 10.0.0.12             -       100     0       65001 65102 i
+ * >Ec    RD: 10.0.0.12:10100 mac-ip aac1.ab83.37be 10.100.0.102
+                                 10.0.0.12             -       100     0       65002 65102 i
+ *  ec    RD: 10.0.0.12:10100 mac-ip aac1.ab83.37be 10.100.0.102
+                                 10.0.0.12             -       100     0       65001 65102 i
+leaf1#exit
+Connection to leaf1 closed.

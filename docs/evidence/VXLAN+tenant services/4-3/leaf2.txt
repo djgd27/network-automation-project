@@ -1,0 +1,51 @@
+ssh admin@leaf2
+Warning: Permanently added 'leaf2' (ED25519) to the list of known hosts.
+(admin@leaf2) Password: 
+Last login: Sat Apr 25 19:24:58 2026 from 172.20.20.1
+leaf2>en
+leaf2#show ip interface Vlan100
+Vlan100 is up, line protocol is up (connected)
+  Description: TENANT_A VLAN 100 anycast gateway
+  Internet address is virtual 10.100.0.1/24
+  Broadcast address is 255.255.255.255
+  IPv4 interface forwarding: enabled
+  IPv6 interface forwarding: none
+  Proxy-ARP is disabled
+  Local Proxy-ARP is disabled
+  Gratuitous ARP is ignored
+  ARP aging timeout is 14400 seconds
+  IP MTU 1500 bytes
+  VPN Routing/Forwarding "TENANT_A"
+leaf2#show ip route vrf TENANT_A
+
+VRF: TENANT_A
+Source Codes:
+       C - connected, S - static, K - kernel,
+       O - OSPF, O IA - OSPF inter area, O E1 - OSPF external type 1,
+       O E2 - OSPF external type 2, O N1 - OSPF NSSA external type 1,
+       O N2 - OSPF NSSA external type2, O3 - OSPFv3,
+       O3 IA - OSPFv3 inter area, O3 E1 - OSPFv3 external type 1,
+       O3 E2 - OSPFv3 external type 2,
+       O3 N1 - OSPFv3 NSSA external type 1,
+       O3 N2 - OSPFv3 NSSA external type2, B - Other BGP Routes,
+       B I - iBGP, B E - eBGP, R - RIP, I L1 - IS-IS level 1,
+       I L2 - IS-IS level 2, A B - BGP Aggregate,
+       A O - OSPF Summary, NG - Nexthop Group Static Route,
+       V - VXLAN Control Service, M - Martian,
+       DH - DHCP client installed default route,
+       DP - Dynamic Policy Route, L - VRF Leaked,
+       G  - gRIBI, RC - Route Cache Route,
+       CL - CBF Leaked Route
+
+Gateway of last resort is not set
+
+ C        10.100.0.0/24
+           directly connected, Vlan100
+
+leaf2#show vlan 100
+VLAN  Name                             Status    Ports
+----- -------------------------------- --------- -------------------------------
+100   TENANT_A_VLAN100                 active    Cpu, Et3
+
+leaf2#exit
+Connection to leaf2 closed.

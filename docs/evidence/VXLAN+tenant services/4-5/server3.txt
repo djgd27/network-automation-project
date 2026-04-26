@@ -1,0 +1,19 @@
+docker exec server3 ip addr show eth1
+358: eth1@if357: <BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN> mtu 9500 qdisc noqueue state UP 
+    link/ether aa:c1:ab:e5:30:a3 brd ff:ff:ff:ff:ff:ff
+    inet 10.101.0.103/24 scope global eth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::a8c1:abff:fee5:30a3/64 scope link 
+       valid_lft forever preferred_lft forever
+docker exec server3 ping -c 4 10.101.0.1
+PING 10.101.0.1 (10.101.0.1): 56 data bytes
+64 bytes from 10.101.0.1: seq=0 ttl=64 time=4.661 ms
+64 bytes from 10.101.0.1: seq=1 ttl=64 time=2.732 ms
+64 bytes from 10.101.0.1: seq=2 ttl=64 time=2.164 ms
+64 bytes from 10.101.0.1: seq=3 ttl=64 time=2.024 ms
+
+--- 10.101.0.1 ping statistics ---
+4 packets transmitted, 4 packets received, 0% packet loss
+round-trip min/avg/max = 2.024/2.895/4.661 ms
+docker exec server3 ip neigh
+10.101.0.1 dev eth1 lladdr 02:1c:73:00:00:65 ref 1 used 0/0/0 probes 4 REACHABLE

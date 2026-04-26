@@ -1,5 +1,9 @@
 # Project Journal
 
+*Note: "Day N" entries below are work sessions, not calendar days.
+Sessions often span midnight, so a single Day captures continuous
+work regardless of clock rollover.*
+
 ## 2026-04-23 — Day 1 (Setup)
 
 ### Done
@@ -113,3 +117,137 @@
    `server1 ping server3` both work.
 5. End of Day 3 target: full manual fabric complete. Golden configs
    captured. Phase 2 done. Phase 3 (NetBox + templates) starts Day 4.
+
+
+
+## 2026-04-25 — Day 3 (EVPN Overlay, VXLAN Tenant Services, SR Linux Scope Cut)
+
+### Done
+
+- **Cleanup from Day 2 blockers.** Removed stray `network` statements
+  for p2p /31 subnets from spine1, spine2, leaf1, leaf2 BGP configs.
+  Re-captured golden configs.
+- **Pass 3 — EVPN overlay activation.** Enabled `address-family evpn`
+  on all 6 leaf↔spine BGP sessions (3 leaves × 2 spines). All EVPN
+  sessions reached `Established` state with zero prefixes — expected,
+  since no VLANs/VNIs configured yet.
+- **Pass 4.1-4.5 — Initial L2 EVPN buildout (cEOS leaves).**
+  - Declared `vrf instance TENANT_A` on leaf1, leaf2, leaf3.
+  - VLAN 100 on leaf1 + leaf2, mapped to VNI 10100 via `interface Vxlan1`.
+  - VLAN 101 on leaf3 (Nokia SR Linux at this point), mapped to VNI 10101.
+  - Anycast gateways: VLAN 100 = `10.100.0.1` MAC `02:1c:73:00:00:64`;
+    VLAN 101 = `10.101.0.1` MAC `02:1c:73:00:00:65`.
+  - BGP MAC-VRFs declared per VLAN with RD/RT (e.g., `10.0.0.11:10100` /
+    `10100:10100` for leaf1 VLAN 100).
+  - Verified L2 EVPN: server1 ↔ server2 (cross-leaf, same VLAN, both
+    cEOS) reachable via VXLAN — 4/4 ping, ~6-7ms warm path. EVPN Type-2
+    MAC-IP routes flowing; Type-3 IMETs visible in spine RIBs with ECMP.
+  - Verified server3 ↔ local anycast gateway (10.101.0.1) on SR Linux —
+    proves SRL L2 EVPN MAC-VRF + IRB anycast configuration valid.
+- **leaf3 migration: Nokia SR Linux → Arista cEOS.** Updated
+  `lab.clab.yml` (kind change), `clab destroy && clab deploy`,
+  reconfigured leaf3 from scratch as cEOS (loopback, p2p IPs, VLAN 101
+  + VNI 10101, anycast gateway, BGP AS 65103, EVPN). Saved as
+  `configs/leaf3/startup.cfg`. Re-verified all Phase 2 baselines: 6 EVPN
+  sessions Established, 3 IMETs flowing with ECMP, server1↔server2
+  still working, server3 reaching local gateway.
+- **Pass 4.8 — L3 EVPN symmetric IRB.** All three leaves now bound to
+  L3 VNI 10999 via single line `vxlan vrf TENANT_A vni 10999` under
+  `interface Vxlan1`. Added `redistribute connected` under `router bgp /
+  vrf TENANT_A` on each leaf. cEOS auto-creates dynamic internal VLANs
+  (4094 on leaf1/leaf2, 4097 on leaf3) for L3 VNI plumbing. Type-5
+  IP-Prefix routes flowing in both directions across all three leaves.
+  Each leaf installs remote subnets via VTEP + L3 VNI 10999 + remote
+  router-MAC.
+- **Server-side gateway fix.** Updated `lab.clab.yml` `exec:` blocks for
+  all servers to replace default route with leaf-side anycast gateway via
+  `eth1`. `clab destroy && clab deploy` to apply.
+- **Demo Story #2 working.** server1 ↔ server3 cross-VLAN, cross-leaf
+  symmetric IRB ping: 4/4 both directions. Cold first-packet ~44ms (ARP
+  + Type-2 MAC-IP learning + propagation back to source leaf), warm
+  ~5-8ms. Steady-state confirmed.
+- Saved running configs (`write memory`) on all 5 cEOS devices.
+  Captured updated golden configs for spine1, spine2, leaf1, leaf2, leaf3.
+
+### Issues resolved
+
+1. **L3 EVPN cross-vendor friction (cEOS ↔ SR Linux).** Multi-hour
+   debugging of L3 EVPN symmetric IRB across cEOS leaf1/leaf2 and SR
+   Linux leaf3. Issues encountered: route-target format mismatch
+   (`<asn>:<value>` cEOS vs `target:<asn>:<value>` SRL), routing-policy
+   syntax dead-ends (incorrect `route-table ip-prefix advertise true`
+   path under ip-vrf — only valid for mac-vrf with single-broadcast-domain),
+   missing `family evpn` policy statements blocking EVPN exports, and
+   suspected RT-constrained route distribution behavior between vendors.
+   No clean resolution emerged in the time available. Resolved by scope
+   decision (see Decisions below) rather than technical fix.
+
+2. **L3 VNI configuration on cEOS — wrong path attempted first.** Initial
+   attempt used manual L3 transit VLAN (VLAN 999 + Vlan999 SVI in VRF +
+   `vxlan vlan 999 vni 10999`). cEOS rejected the second VRF binding line
+   with `% VNI 10999 is already used to map vlan 999`. Multiple iterations
+   tried adding/removing the VLAN 999 stanza without success. Resolved by
+   reading Arista's official L3 EVPN lab guide
+   (https://labguides.testdrive.arista.com/2025.1/data_center/l3_evpn/),
+   which specifies the **single line** `vxlan vrf <VRF> vni <L3_VNI>`
+   under Vxlan1 — no transit VLAN needed. cEOS handles internal VLAN
+   allocation automatically. Documented in `architecture.md` Lessons
+   Learned.
+
+3. **Cross-VLAN ping failed despite healthy control plane.** After all
+   leaves had L3 VNI binding and Type-5 routes flowing, server1 → server3
+   ping returned 0/4. Diagnosed: `docker exec server1 ip route` showed
+   default route via `172.20.20.1` (mgmt network on `eth0`), not via the
+   leaf-side anycast gateway. Tenant traffic for unknown destinations
+   exited the wrong interface. Resolved by updating server `exec:` blocks
+   in `lab.clab.yml` to delete and replace the default route. Fabric was
+   never broken — host routing was misconfigured.
+
+### Decisions
+
+- **Drop Nokia SR Linux from leaf layer; standardize on Arista cEOS.**
+  Multi-vendor diversity preserved at edge layer (FRR↔cEOS spine1).
+  Cross-vendor EVPN leaf interop documented as Future Work. Rationale:
+  project timeline (11 days total, ~5-6 days remaining for Phases 3-7)
+  cannot absorb unbounded debugging of cross-vendor L3 EVPN compatibility.
+  L2 EVPN had been verified working cross-vendor before migration, so
+  the principle is demonstrated; the gap is L3-specific configuration
+  tuning. Side benefit: uniform cEOS leaf layer simplifies Phase 3
+  Jinja2 templating significantly.
+- **VLAN/VNI architecture confirmed.** VLAN 100 → VNI 10100 (leaf1, leaf2),
+  VLAN 101 → VNI 10101 (leaf3), L3 VNI 10999 in VRF TENANT_A on all leaves.
+  No manual L3 transit VLAN — cEOS handles it.
+- **Server default routing model.** Servers' default gateway points at
+  leaf-side anycast gateway via `eth1`. Connected route to mgmt subnet
+  preserved (`scope link`) so `docker exec` and clab management still
+  work. Production-equivalent behavior.
+- **Self-directed learning is the project thesis.** EVPN-VXLAN, symmetric
+  IRB, and the surrounding NetDevOps stack were not covered in course
+  material. Every pass began with vendor docs, RFCs, and lab guides
+  before any configuration. The iterative, sometimes-circuitous pace
+  documented in this journal reflects genuine learning rather than
+  recipe-following. Will be emphasized in final report.
+
+### Issues / blockers (open)
+
+- [ ] Update demo video script to reflect the two working demo stories
+      (server1↔server2 L2 EVPN, server1↔server3 L3 EVPN symmetric IRB).
+      Drop the original cross-vendor narrative.
+- [ ] Capture organized evidence dump for report appendix: BGP summaries,
+      EVPN route-types (IMET, MAC-IP, IP-Prefix), VRF route tables,
+      successful pings. Currently scattered across this session's
+      transcript; needs consolidation into `validation/` or `evidence/`.
+
+### Next session (Day 4)
+
+1. Consolidate evidence dump (the open blocker above).
+2. **Phase 3 — NetBox source of truth.** Stand up NetBox via Docker.
+   Model the fabric: sites, devices, interfaces, IP addresses, VLANs,
+   VRFs, BGP ASNs. The uniform cEOS leaf layer (post-SRL drop) makes
+   templating significantly cleaner.
+3. **Jinja2 templates** rendering against the captured golden cEOS configs
+   to validate idempotence (rendered config = golden config, byte-for-byte
+   after secret scrubbing).
+4. End of Day 4 target: NetBox populated, Jinja2 templates rendering
+   identical configs to golden. Phase 3 complete. Phase 4 (Nornir/NAPALM)
+   starts Day 5.

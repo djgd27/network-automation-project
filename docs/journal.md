@@ -251,3 +251,101 @@ work regardless of clock rollover.*
 4. End of Day 4 target: NetBox populated, Jinja2 templates rendering
    identical configs to golden. Phase 3 complete. Phase 4 (Nornir/NAPALM)
    starts Day 5.
+
+
+
+## 2026-04-26 — Day 4 (Phase 3 Kickoff: NetBox Source of Truth)
+
+### Done
+
+- **Vendored netbox-docker 4.0.2** under `inventory/netbox/upstream/`.
+  Cloned from upstream, checked out tag `4.0.2`
+  (commit `c6cd7ef2de050803b986c17765b8aa54282dbb3e`), removed nested
+  `.git/` so the tree is part of this repo's history rather than a
+  submodule. Pin recorded in `inventory/netbox/UPSTREAM_VERSION`.
+  Resolved app version: NetBox 4.5.8.
+- **Wrote local override** (`inventory/netbox/docker-compose.override.yml`)
+  publishing port `0.0.0.0:8000:8080` so the UI is reachable from the LAN
+  (host IP `10.11.20.20`), bumping the netbox healthcheck `start_period`
+  from 90s to 300s, and bootstrapping a superuser via
+  `SKIP_SUPERUSER=false` + `SUPERUSER_*` envs.
+- **Stack up.** All 5 containers (`netbox`, `netbox-worker`, `postgres`,
+  `redis`, `redis-cache`) reach `healthy`. UI returns HTTP 200 from both
+  `127.0.0.1:8000` and `10.11.20.20:8000`. `/api/status/` returns valid
+  JSON when called with the bootstrap token (`netbox-version: 4.5.8`,
+  `rq-workers-running: 1`).
+- **Secrets hygiene.** Live override is gitignored under existing rule
+  `*.override.yml`; committed `docker-compose.override.yml.example` with
+  `CHANGE_ME` placeholders documents the bring-up flow without leaking
+  the actual lab credentials. Standard NetDevOps shape and matches how
+  netbox-docker themselves ship their `.example`.
+
+### Issues resolved
+
+1. **NetBox container marked unhealthy on first boot.** Root cause: first-
+   boot DB migrations (100+ Django migrations across ~18 apps) take ~5
+   minutes on this VM, exceeding the upstream healthcheck `start_period`
+   of 90s. Compose then refused to start `netbox-worker` because of its
+   `depends_on netbox: condition: service_healthy`. Fix: bumped
+   `start_period` to 300s in our override; container now reaches
+   `healthy` cleanly and the worker starts on the second `up -d`.
+
+2. **API token format change in NetBox 4.x.** First curl against
+   `/api/status/` with `Authorization: Token <hex>` returned
+   `403 Invalid v1 token`. Root cause: NetBox 4.0+ moved to v2 tokens of
+   the form `nbt_<id>.<secret>` and use `Bearer` auth, not `Token`. The
+   `SUPERUSER_API_TOKEN` env only seeds the *secret* portion; the `<id>`
+   is generated at first boot and printed in the netbox container logs.
+   Verified working header is
+   `Authorization: Bearer nbt_<id>.<secret>`. Documented in the override
+   `.example` file so future-me doesn't trip on it.
+
+### Decisions
+
+- **Vendor netbox-docker rather than submodule or live clone.** Project
+  is graded on reproducibility ("Include instructions for replication" —
+  Project-1.pdf §5b). Submission is a Brightspace zip; a self-contained
+  tree is the strongest reproducibility story. Cost is ~316 KB committed
+  to repo — negligible. Bumping upstream is a manual re-clone-and-replace
+  per the procedure in `UPSTREAM_VERSION`.
+- **Layout: everything NetBox-related under `inventory/netbox/`.**
+  `upstream/` (vendored), `UPSTREAM_VERSION` (pin), override (gitignored)
+  + `.example` (committed) all in one folder. `data/` (seed YAMLs) and
+  `seed.py` will land here in Step 2 so the entire "source of truth"
+  surface lives in one place.
+- **NetBox is intent-only; no plane connectivity to the fabric.** NetBox
+  has no route to the clab management subnet (`172.20.20.0/24`) and
+  doesn't need one. The Phase 4 automation runner (Nornir/NAPALM) is the
+  only thing that talks to both NetBox API and device mgmt IPs. Keeps
+  NetBox on its own docker network, untouched by `clab destroy/deploy`.
+- **Bootstrap token is throwaway.** Bootstrap created token ID
+  `WTgJ7mEykcFz` (random per first-boot). For Phase 4 will mint a fresh
+  named token in the UI (e.g. `automation-runner`) so rotation doesn't
+  drag the bootstrap state along. The bootstrap token is only used for
+  smoke testing during this session.
+
+### Issues / blockers (open)
+
+- [ ] **No wrapper scripts yet.** `scripts/netbox-up.sh` /
+      `netbox-down.sh` to mirror the existing clab wrappers. Deferred so
+      the lifecycle stays in one literal `docker compose` command for now;
+      mirror the `_lib.sh` style when added.
+- [ ] **Phase 5 secret rotation.** Lab-default password (`admin`) and
+      bootstrap token secret are in the live override, which is
+      gitignored — fine for now. Before any GitHub Actions self-hosted
+      runner work, rotate to a different token and store it in GH Secrets
+      rather than a committed file.
+
+### Next session
+
+1. **Phase 3 / Step 2 — Seed YAMLs.** Author `inventory/netbox/data/`:
+   `sites.yml`, `device-roles.yml`, `device-types.yml`, `devices.yml`,
+   `interfaces.yml`, `ips.yml`, `vlans.yml`, `vrfs.yml`. Custom fields
+   for BGP ASN, router-id, VTEP IP per `architecture.md` addressing plan.
+2. Write `inventory/netbox/seed.py` using `pynetbox` to idempotently push
+   the YAML data into NetBox. Run, inspect UI, fix inconsistencies.
+3. **Phase 3 / Step 3 — Jinja2 templates** rendering against captured
+   golden cEOS configs; goal is byte-equivalence after secret scrubbing.
+4. End of Day 5 target: NetBox populated, Jinja2 templates rendering
+   byte-equivalent configs. Phase 3 complete; Phase 4 (Nornir/NAPALM
+   tasks + lightweight pre-flight validator) starts Day 6.

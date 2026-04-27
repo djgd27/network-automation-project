@@ -13,7 +13,9 @@ end-to-end by an automation pipeline (NetBox → Jinja2 → Nornir/NAPALM
 - [x] Phase 2 / Pass 2 — Full underlay, all 6 devices, multi-vendor
 - [x] Phase 2 / Pass 3 — EVPN overlay (next session)
 - [x] Phase 2 / Pass 4 — VXLAN + tenant services
-- [ ] Phase 3 — NetBox source of truth + Jinja2 templates
+- [x] Phase 3 / Step 1 — NetBox stood up (netbox-docker 4.0.2 vendored)
+- [ ] Phase 3 / Step 2 — Seed YAMLs + `seed.py` populate fabric model in NetBox
+- [ ] Phase 3 / Step 3 — Jinja2 templates render byte-equivalent to golden configs
 - [ ] Phase 4 — Nornir/NAPALM automation + lightweight validation
 - [ ] Phase 5 — CI/CD via GitHub Actions (self-hosted runner)
 - [ ] Phase 6 — gNMI telemetry + Grafana (single above-and-beyond item)

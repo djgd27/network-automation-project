@@ -21,6 +21,7 @@ tmp/
 *.pid
 
 # ---- secrets / env ----
+venv
 .env
 .env.*
 *.pem

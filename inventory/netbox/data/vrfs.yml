@@ -1,8 +1,5 @@
 - name: TENANT_A
   tenant: tenant-a
   rd: null
-  description: |
-    Single demo tenant VRF spanning VLAN 100 (leaf1, leaf2) and VLAN 101 (leaf3).
-    Bound to L3 VNI 10999 on each leaf for symmetric IRB. RD is per-device
-    (<router-id>:1) and computed in the Jinja2 template; left null here.
+  description: Demo tenant VRF (VLAN 100, 101). L3 VNI 10999. RD per-device, set in template.
   enforce_unique: true

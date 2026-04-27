@@ -145,7 +145,7 @@ intentionally NOT advertised.
 During Pass 2 verification, pinging a non-loopback destination from edge1
 failed:
 
-```
+```console
 edge1# ping 10.0.0.12
 9 packets transmitted, 0 received, 100% packet loss
 ```
@@ -155,7 +155,7 @@ Destination leaf has no route to `10.2.0.0/31`, so return traffic was dropped.
 
 Workaround: source from the loopback (which IS advertised):
 
-```
+```console
 edge1# ping -I 10.0.0.254 10.0.0.12
 4 packets transmitted, 4 packets received, 0% packet loss
 ```
@@ -231,6 +231,7 @@ this VLAN.
 
 Combined with `redistribute connected` under `router bgp / vrf <VRF>`,
 this is sufficient to:
+
 - Generate Type-5 IP-Prefix routes for connected subnets
 - Receive Type-5 routes carrying matching RT and install them in VRF RIB
 - Forward routed traffic via VXLAN with the L3 VNI
@@ -317,7 +318,6 @@ The artifact this produces is more valuable for being self-built. A
 copied-from-tutorial fabric does not reveal which configuration lines
 matter and which are vendor noise; this one does, because every line was
 fought for.
-
 
 ## Future Work
 

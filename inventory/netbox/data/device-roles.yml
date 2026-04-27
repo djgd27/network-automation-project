@@ -1,0 +1,14 @@
+- name: Spine
+  slug: spine
+  color: 2196f3
+  description: Underlay BGP transit + EVPN reflection point (no RR; spines are eBGP transit)
+
+- name: Leaf
+  slug: leaf
+  color: 4caf50
+  description: VTEP / tenant access switch
+
+- name: Edge
+  slug: edge
+  color: ff9800
+  description: Upstream / "internet" simulator

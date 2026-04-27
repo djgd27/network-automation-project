@@ -1,0 +1,90 @@
+# Aggregates first, /31 underlay links and tenant subnets second.
+# Tenant prefixes are scoped to VRF TENANT_A; underlay/loopback/mgmt are global.
+
+# ---------- Aggregates / containers ----------
+- prefix: 10.0.0.0/24
+  site: lab
+  status: container
+  description: Loopback pool (one /32 per device)
+
+- prefix: 10.1.0.0/16
+  site: lab
+  status: container
+  description: Underlay point-to-point links (/31 each)
+
+- prefix: 10.2.0.0/16
+  site: lab
+  status: container
+  description: Edge / upstream connectivity
+
+- prefix: 10.100.0.0/16
+  site: lab
+  vrf: TENANT_A
+  tenant: tenant-a
+  status: container
+  description: Tenant A VLAN 100 supernet
+
+- prefix: 10.101.0.0/16
+  site: lab
+  vrf: TENANT_A
+  tenant: tenant-a
+  status: container
+  description: Tenant A VLAN 101 supernet
+
+- prefix: 172.20.20.0/24
+  site: lab
+  status: active
+  description: containerlab management network (auto-assigned)
+
+# ---------- Underlay /31 point-to-point links ----------
+- prefix: 10.1.1.0/31
+  site: lab
+  status: active
+  description: spine1 Eth1 ↔ leaf1 Eth1
+
+- prefix: 10.1.1.2/31
+  site: lab
+  status: active
+  description: spine1 Eth2 ↔ leaf2 Eth1
+
+- prefix: 10.1.1.4/31
+  site: lab
+  status: active
+  description: spine1 Eth3 ↔ leaf3 Eth1
+
+- prefix: 10.1.2.0/31
+  site: lab
+  status: active
+  description: spine2 Eth1 ↔ leaf1 Eth2
+
+- prefix: 10.1.2.2/31
+  site: lab
+  status: active
+  description: spine2 Eth2 ↔ leaf2 Eth2
+
+- prefix: 10.1.2.4/31
+  site: lab
+  status: active
+  description: spine2 Eth3 ↔ leaf3 Eth2
+
+- prefix: 10.2.0.0/31
+  site: lab
+  status: active
+  description: spine1 Eth4 ↔ edge1 eth1
+
+# ---------- Tenant subnets ----------
+- prefix: 10.100.0.0/24
+  site: lab
+  vrf: TENANT_A
+  tenant: tenant-a
+  vlan: 100
+  status: active
+  description: Tenant A VLAN 100 subnet, anycast GW .1
+
+- prefix: 10.101.0.0/24
+  site: lab
+  vrf: TENANT_A
+  tenant: tenant-a
+  vlan: 101
+  status: active
+  description: Tenant A VLAN 101 subnet, anycast GW .1

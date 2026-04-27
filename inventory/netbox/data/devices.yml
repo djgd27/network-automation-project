@@ -1,0 +1,58 @@
+# Six managed network devices. Servers (server1..3) are not modeled in NetBox —
+# their lifecycle lives in topology/lab.clab.yml exec blocks.
+# `primary_ip4` is set after IPs are loaded; seed.py sets it to the Loopback0 IP
+# in a second pass. Listed here for documentation.
+
+- name: spine1
+  site: lab
+  role: spine
+  device_type: ceos-lab
+  status: active
+  custom_fields:
+    bgp_asn: 65001
+  primary_ip4: 10.0.0.1/32
+
+- name: spine2
+  site: lab
+  role: spine
+  device_type: ceos-lab
+  status: active
+  custom_fields:
+    bgp_asn: 65002
+  primary_ip4: 10.0.0.2/32
+
+- name: leaf1
+  site: lab
+  role: leaf
+  device_type: ceos-lab
+  status: active
+  custom_fields:
+    bgp_asn: 65101
+  primary_ip4: 10.0.0.11/32
+
+- name: leaf2
+  site: lab
+  role: leaf
+  device_type: ceos-lab
+  status: active
+  custom_fields:
+    bgp_asn: 65102
+  primary_ip4: 10.0.0.12/32
+
+- name: leaf3
+  site: lab
+  role: leaf
+  device_type: ceos-lab
+  status: active
+  custom_fields:
+    bgp_asn: 65103
+  primary_ip4: 10.0.0.13/32
+
+- name: edge1
+  site: lab
+  role: edge
+  device_type: frr
+  status: active
+  custom_fields:
+    bgp_asn: 65200
+  primary_ip4: 10.0.0.254/32

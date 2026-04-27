@@ -1,0 +1,145 @@
+# IP address assignments. `role: anycast` exempts the SVI gateway IPs from
+# the VRF's enforce_unique check (leaf1 + leaf2 both carry 10.100.0.1/24).
+# `is_primary` flags the Loopback0 IP that seed.py promotes to device.primary_ip4.
+
+# ============================================================
+# Loopbacks (router-ID / BGP source / VTEP source)
+# ============================================================
+- address: 10.0.0.1/32
+  device: spine1
+  interface: Loopback0
+  is_primary: true
+  description: spine1 router-ID / BGP source
+
+- address: 10.0.0.2/32
+  device: spine2
+  interface: Loopback0
+  is_primary: true
+  description: spine2 router-ID / BGP source
+
+- address: 10.0.0.11/32
+  device: leaf1
+  interface: Loopback0
+  is_primary: true
+  description: leaf1 router-ID / BGP source / VTEP source
+
+- address: 10.0.0.12/32
+  device: leaf2
+  interface: Loopback0
+  is_primary: true
+  description: leaf2 router-ID / BGP source / VTEP source
+
+- address: 10.0.0.13/32
+  device: leaf3
+  interface: Loopback0
+  is_primary: true
+  description: leaf3 router-ID / BGP source / VTEP source
+
+- address: 10.0.0.254/32
+  device: edge1
+  interface: lo
+  is_primary: true
+  description: edge1 router-ID / BGP source
+
+# ============================================================
+# Underlay /31 point-to-point — spine1 fan-out
+# ============================================================
+- address: 10.1.1.0/31
+  device: spine1
+  interface: Ethernet1
+  description: P2P to leaf1
+
+- address: 10.1.1.1/31
+  device: leaf1
+  interface: Ethernet1
+  description: P2P to spine1
+
+- address: 10.1.1.2/31
+  device: spine1
+  interface: Ethernet2
+  description: P2P to leaf2
+
+- address: 10.1.1.3/31
+  device: leaf2
+  interface: Ethernet1
+  description: P2P to spine1
+
+- address: 10.1.1.4/31
+  device: spine1
+  interface: Ethernet3
+  description: P2P to leaf3
+
+- address: 10.1.1.5/31
+  device: leaf3
+  interface: Ethernet1
+  description: P2P to spine1
+
+# ============================================================
+# Underlay /31 point-to-point — spine2 fan-out
+# ============================================================
+- address: 10.1.2.0/31
+  device: spine2
+  interface: Ethernet1
+  description: P2P to leaf1
+
+- address: 10.1.2.1/31
+  device: leaf1
+  interface: Ethernet2
+  description: P2P to spine2
+
+- address: 10.1.2.2/31
+  device: spine2
+  interface: Ethernet2
+  description: P2P to leaf2
+
+- address: 10.1.2.3/31
+  device: leaf2
+  interface: Ethernet2
+  description: P2P to spine2
+
+- address: 10.1.2.4/31
+  device: spine2
+  interface: Ethernet3
+  description: P2P to leaf3
+
+- address: 10.1.2.5/31
+  device: leaf3
+  interface: Ethernet2
+  description: P2P to spine2
+
+# ============================================================
+# Edge / upstream
+# ============================================================
+- address: 10.2.0.0/31
+  device: spine1
+  interface: Ethernet4
+  description: P2P to edge1
+
+- address: 10.2.0.1/31
+  device: edge1
+  interface: eth1
+  description: P2P to spine1
+
+# ============================================================
+# Tenant SVIs (anycast gateways inside VRF TENANT_A)
+# ============================================================
+- address: 10.100.0.1/24
+  device: leaf1
+  interface: Vlan100
+  vrf: TENANT_A
+  role: anycast
+  description: Tenant A VLAN 100 anycast gateway
+
+- address: 10.100.0.1/24
+  device: leaf2
+  interface: Vlan100
+  vrf: TENANT_A
+  role: anycast
+  description: Tenant A VLAN 100 anycast gateway
+
+- address: 10.101.0.1/24
+  device: leaf3
+  interface: Vlan101
+  vrf: TENANT_A
+  role: anycast
+  description: Tenant A VLAN 101 anycast gateway

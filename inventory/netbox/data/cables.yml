@@ -1,0 +1,65 @@
+# Physical cabling between fabric devices. Mirrors topology/lab.clab.yml `links:`.
+# Server-to-leaf cables are omitted (servers are not modeled in NetBox).
+
+- a:
+    device: spine1
+    interface: Ethernet1
+  b:
+    device: leaf1
+    interface: Ethernet1
+  status: connected
+  type: cat6
+
+- a:
+    device: spine1
+    interface: Ethernet2
+  b:
+    device: leaf2
+    interface: Ethernet1
+  status: connected
+  type: cat6
+
+- a:
+    device: spine1
+    interface: Ethernet3
+  b:
+    device: leaf3
+    interface: Ethernet1
+  status: connected
+  type: cat6
+
+- a:
+    device: spine1
+    interface: Ethernet4
+  b:
+    device: edge1
+    interface: eth1
+  status: connected
+  type: cat6
+
+- a:
+    device: spine2
+    interface: Ethernet1
+  b:
+    device: leaf1
+    interface: Ethernet2
+  status: connected
+  type: cat6
+
+- a:
+    device: spine2
+    interface: Ethernet2
+  b:
+    device: leaf2
+    interface: Ethernet2
+  status: connected
+  type: cat6
+
+- a:
+    device: spine2
+    interface: Ethernet3
+  b:
+    device: leaf3
+    interface: Ethernet2
+  status: connected
+  type: cat6

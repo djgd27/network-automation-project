@@ -1,0 +1,11 @@
+- name: bgp_asn
+  label: BGP ASN
+  type: integer
+  object_types:
+    - dcim.device
+  required: true
+  description: |
+    Per-device BGP ASN. Underlay is eBGP per-link with a unique ASN per device;
+    overlay EVPN uses the same ASN for the loopback-sourced multihop session.
+  validation_minimum: 1
+  validation_maximum: 4294967295

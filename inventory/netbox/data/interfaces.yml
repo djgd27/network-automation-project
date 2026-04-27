@@ -1,0 +1,214 @@
+# Per-device interfaces. Naming matches what each NOS shows in running-config:
+#   cEOS    → Ethernet1, Loopback0, Vlan100, Vxlan1
+#   FRR     → eth1, lo
+# Type `1000base-t` for physical Ethernet (cabled). Type `virtual` for everything
+# else (Loopback, SVI, Vxlan, mgmt). Mgmt interfaces are present but unaddressed
+# — clab auto-assigns 172.20.20.0/24 at deploy time.
+
+# ============================================================
+# spine1 (cEOS, AS 65001)
+# ============================================================
+- device: spine1
+  name: Loopback0
+  type: virtual
+  description: Router-ID and BGP source
+
+- device: spine1
+  name: Management0
+  type: virtual
+  description: containerlab mgmt (172.20.20.0/24, runtime-assigned)
+  mgmt_only: true
+
+- device: spine1
+  name: Ethernet1
+  type: 1000base-t
+  description: To leaf1 Ethernet1
+
+- device: spine1
+  name: Ethernet2
+  type: 1000base-t
+  description: To leaf2 Ethernet1
+
+- device: spine1
+  name: Ethernet3
+  type: 1000base-t
+  description: To leaf3 Ethernet1
+
+- device: spine1
+  name: Ethernet4
+  type: 1000base-t
+  description: To edge1 eth1
+
+# ============================================================
+# spine2 (cEOS, AS 65002)
+# ============================================================
+- device: spine2
+  name: Loopback0
+  type: virtual
+  description: Router-ID and BGP source
+
+- device: spine2
+  name: Management0
+  type: virtual
+  description: containerlab mgmt (172.20.20.0/24, runtime-assigned)
+  mgmt_only: true
+
+- device: spine2
+  name: Ethernet1
+  type: 1000base-t
+  description: To leaf1 Ethernet2
+
+- device: spine2
+  name: Ethernet2
+  type: 1000base-t
+  description: To leaf2 Ethernet2
+
+- device: spine2
+  name: Ethernet3
+  type: 1000base-t
+  description: To leaf3 Ethernet2
+
+# ============================================================
+# leaf1 (cEOS, AS 65101, VTEP)
+# ============================================================
+- device: leaf1
+  name: Loopback0
+  type: virtual
+  description: Router-ID, BGP source, VTEP source
+
+- device: leaf1
+  name: Management0
+  type: virtual
+  description: containerlab mgmt (172.20.20.0/24, runtime-assigned)
+  mgmt_only: true
+
+- device: leaf1
+  name: Ethernet1
+  type: 1000base-t
+  description: To spine1 Ethernet1
+
+- device: leaf1
+  name: Ethernet2
+  type: 1000base-t
+  description: To spine2 Ethernet1
+
+- device: leaf1
+  name: Ethernet3
+  type: 1000base-t
+  description: Access port to server1 (untagged VLAN 100)
+  mode: access
+  untagged_vlan: 100
+
+- device: leaf1
+  name: Vlan100
+  type: virtual
+  description: Tenant A SVI, anycast gateway 10.100.0.1/24
+  vrf: TENANT_A
+
+- device: leaf1
+  name: Vxlan1
+  type: virtual
+  description: VTEP source, sourced from Loopback0; L2 VNI 10100, L3 VNI 10999
+
+# ============================================================
+# leaf2 (cEOS, AS 65102, VTEP)
+# ============================================================
+- device: leaf2
+  name: Loopback0
+  type: virtual
+  description: Router-ID, BGP source, VTEP source
+
+- device: leaf2
+  name: Management0
+  type: virtual
+  description: containerlab mgmt (172.20.20.0/24, runtime-assigned)
+  mgmt_only: true
+
+- device: leaf2
+  name: Ethernet1
+  type: 1000base-t
+  description: To spine1 Ethernet2
+
+- device: leaf2
+  name: Ethernet2
+  type: 1000base-t
+  description: To spine2 Ethernet2
+
+- device: leaf2
+  name: Ethernet3
+  type: 1000base-t
+  description: Access port to server2 (untagged VLAN 100)
+  mode: access
+  untagged_vlan: 100
+
+- device: leaf2
+  name: Vlan100
+  type: virtual
+  description: Tenant A SVI, anycast gateway 10.100.0.1/24
+  vrf: TENANT_A
+
+- device: leaf2
+  name: Vxlan1
+  type: virtual
+  description: VTEP source, sourced from Loopback0; L2 VNI 10100, L3 VNI 10999
+
+# ============================================================
+# leaf3 (cEOS, AS 65103, VTEP)
+# ============================================================
+- device: leaf3
+  name: Loopback0
+  type: virtual
+  description: Router-ID, BGP source, VTEP source
+
+- device: leaf3
+  name: Management0
+  type: virtual
+  description: containerlab mgmt (172.20.20.0/24, runtime-assigned)
+  mgmt_only: true
+
+- device: leaf3
+  name: Ethernet1
+  type: 1000base-t
+  description: To spine1 Ethernet3
+
+- device: leaf3
+  name: Ethernet2
+  type: 1000base-t
+  description: To spine2 Ethernet3
+
+- device: leaf3
+  name: Ethernet3
+  type: 1000base-t
+  description: Access port to server3 (untagged VLAN 101)
+  mode: access
+  untagged_vlan: 101
+
+- device: leaf3
+  name: Vlan101
+  type: virtual
+  description: Tenant A SVI, anycast gateway 10.101.0.1/24
+  vrf: TENANT_A
+
+- device: leaf3
+  name: Vxlan1
+  type: virtual
+  description: VTEP source, sourced from Loopback0; L2 VNI 10101, L3 VNI 10999
+
+# ============================================================
+# edge1 (FRR, AS 65200)
+# ============================================================
+- device: edge1
+  name: lo
+  type: virtual
+  description: Router-ID and BGP source
+
+- device: edge1
+  name: eth0
+  type: virtual
+  description: containerlab mgmt (172.20.20.0/24, runtime-assigned)
+  mgmt_only: true
+
+- device: edge1
+  name: eth1
+  type: 1000base-t
+  description: To spine1 Ethernet4

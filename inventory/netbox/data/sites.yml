@@ -1,0 +1,4 @@
+- name: Lab
+  slug: lab
+  status: active
+  description: containerlab EVPN-VXLAN spine-leaf fabric (final project, Marist NetDevOps)

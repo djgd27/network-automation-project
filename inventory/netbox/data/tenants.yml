@@ -1,0 +1,3 @@
+- name: Tenant A
+  slug: tenant-a
+  description: Demo tenant carrying VLAN 100 and VLAN 101 across the fabric

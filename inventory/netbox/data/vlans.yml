@@ -1,0 +1,17 @@
+- vid: 100
+  name: TENANT_A_VLAN100
+  site: lab
+  tenant: tenant-a
+  status: active
+  description: |
+    Tenant A access VLAN, present on leaf1 + leaf2. L2 VNI 10100, anycast
+    gateway 10.100.0.1/24 on Vlan100 SVI in VRF TENANT_A.
+
+- vid: 101
+  name: TENANT_A_VLAN101
+  site: lab
+  tenant: tenant-a
+  status: active
+  description: |
+    Tenant A access VLAN, present on leaf3. L2 VNI 10101, anycast gateway
+    10.101.0.1/24 on Vlan101 SVI in VRF TENANT_A.

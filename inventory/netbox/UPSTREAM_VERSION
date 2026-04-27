@@ -1,0 +1,17 @@
+netbox-docker pinned version
+============================
+
+Tag:        4.0.2
+Commit SHA: c6cd7ef2de050803b986c17765b8aa54282dbb3e
+NetBox app: v4.5-4.0.2  (resolved by upstream/docker-compose.yml VERSION default)
+Pinned on:  2026-04-26
+Source:     https://github.com/netbox-community/netbox-docker
+
+To bump:
+  1. cd inventory/netbox
+  2. rm -rf upstream
+  3. git clone https://github.com/netbox-community/netbox-docker.git upstream
+  4. cd upstream && git checkout <new-tag> && SHA=$(git rev-parse HEAD)
+  5. rm -rf .git
+  6. Update this file with the new tag, SHA, and date.
+  7. Re-test the override and seed flow before committing.

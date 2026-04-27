@@ -1,0 +1,33 @@
+# Local override for the vendored netbox-docker stack.
+#
+# Copy this file to `docker-compose.override.yml` (same directory) and edit
+# the marked placeholders before running `docker compose up`. The real
+# override is gitignored so secrets stay out of source control.
+#
+#   cp docker-compose.override.yml.example docker-compose.override.yml
+#   # edit the four CHANGE_ME values below
+#
+# Bring up:
+#   docker compose -f upstream/docker-compose.yml -f docker-compose.override.yml up -d
+#
+# A note on tokens: NetBox 4.x uses v2 tokens shaped `nbt_<id>.<secret>`.
+# The value below is the *secret* portion only; NetBox generates the `<id>`
+# at first boot and prints it in the netbox container logs. The full token
+# you'll use with pynetbox / curl is `nbt_<id>.<secret>`. For Phase 4,
+# create a fresh named token in the UI rather than reusing this bootstrap.
+services:
+  netbox:
+    ports:
+      # Bind to 0.0.0.0 so the UI is reachable from the LAN. Switch to
+      # 127.0.0.1:8000:8080 if you want it host-only.
+      - "0.0.0.0:8000:8080"
+    healthcheck:
+      # First-boot DB migrations exceed the upstream default 90s.
+      start_period: 300s
+    environment:
+      SKIP_SUPERUSER: "false"
+      SUPERUSER_NAME: "admin"
+      SUPERUSER_EMAIL: "admin@netbox.local"
+      SUPERUSER_PASSWORD: "CHANGE_ME"
+      # 40 hex chars; generate with: openssl rand -hex 20
+      SUPERUSER_API_TOKEN: "CHANGE_ME_40_HEX_CHARS"

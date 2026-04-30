@@ -1,0 +1,36 @@
+frr version 8.4
+frr defaults traditional
+hostname {{ hostname }}
+no ipv6 forwarding
+!
+{% for iface in interfaces if iface.kind in ('loopback', 'p2p') %}
+interface {{ iface.name }}
+{% if iface.ip_address %}
+ ip address {{ iface.ip_address }}
+{% endif %}
+!
+{% endfor %}
+route-map PERMIT-ALL permit 10
+!
+router bgp {{ asn }}
+ bgp router-id {{ router_id }}
+ no bgp default ipv4-unicast
+{% for n in neighbors %}
+ neighbor {{ n.ip }} remote-as {{ n.asn }}
+ neighbor {{ n.ip }} description {{ n.name }}
+{% endfor %}
+ !
+ address-family ipv4 unicast
+{% for n in neighbors %}
+  neighbor {{ n.ip }} activate
+  neighbor {{ n.ip }} route-map PERMIT-ALL in
+  neighbor {{ n.ip }} route-map PERMIT-ALL out
+{% endfor %}
+  network {{ router_id }}/32
+  network 8.8.8.0/24
+ exit-address-family
+!
+ip route 8.8.8.0/24 Null0
+!
+line vty
+!

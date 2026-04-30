@@ -1,0 +1,113 @@
+!
+service routing protocols model multi-agent
+!
+hostname {{ hostname }}
+!
+{% for v in vlans %}
+vlan {{ v.vid }}
+   name {{ v.name }}
+!
+{% endfor %}
+{% if has_vrf_tenant_a %}
+vrf instance {{ vrf_name }}
+!
+{% endif %}
+{% for iface in interfaces %}
+{% if iface.kind == 'p2p' %}
+interface {{ iface.name }}
+{% if iface.peer %}
+   description p2p to {{ iface.peer.name }} {{ iface.peer.iface | short_iface }}
+{% endif %}
+   no switchport
+{% if iface.ip_address %}
+   ip address {{ iface.ip_address }}
+{% endif %}
+!
+{% elif iface.kind == 'access' %}
+interface {{ iface.name }}
+{% if iface.description %}
+   description {{ iface.description }}
+{% endif %}
+   switchport access vlan {{ iface.untagged_vlan }}
+!
+{% elif iface.kind == 'loopback' %}
+interface {{ iface.name }}
+{% if iface.description %}
+   description {{ iface.description }}
+{% endif %}
+{% if iface.ip_address %}
+   ip address {{ iface.ip_address }}
+{% endif %}
+!
+{% elif iface.kind == 'svi' %}
+interface {{ iface.name }}
+{% if iface.description %}
+   description {{ iface.description }}
+{% endif %}
+{% if iface.vrf %}
+   vrf {{ iface.vrf }}
+{% endif %}
+{% if iface.ip_address %}
+   ip address {% if iface.ip_role == 'anycast' %}virtual {% endif %}{{ iface.ip_address }}
+{% endif %}
+!
+{% elif iface.kind == 'vxlan' %}
+interface {{ iface.name }}
+{% if iface.description %}
+   description {{ iface.description }}
+{% endif %}
+   vxlan source-interface Loopback0
+   vxlan udp-port 4789
+{% for v in vlans %}
+   vxlan vlan {{ v.vid }} vni {{ v.vni }}
+{% endfor %}
+!
+{% endif %}
+{% endfor %}
+{% if anycast_vids %}
+ip virtual-router mac-address {{ anycast_vids[0] | anycast_mac }}
+!
+{% endif %}
+ip routing
+{% if has_vrf_tenant_a %}
+ip routing vrf {{ vrf_name }}
+{% endif %}
+!
+router bgp {{ asn }}
+   router-id {{ router_id }}
+   no bgp default ipv4-unicast
+{% for n in neighbors %}
+   neighbor {{ n.ip }} remote-as {{ n.asn }}
+   neighbor {{ n.ip }} description {{ n.name }}
+{% if n.is_fabric %}
+   neighbor {{ n.ip }} send-community extended
+{% endif %}
+{% endfor %}
+   !
+{% for v in vlans %}
+   vlan {{ v.vid }}
+      rd {{ router_id }}:{{ v.vni }}
+      route-target both {{ v.vni }}:{{ v.vni }}
+      redistribute learned
+   !
+{% endfor %}
+   address-family evpn
+{% for n in neighbors if n.is_fabric %}
+      neighbor {{ n.ip }} activate
+{% endfor %}
+   !
+   address-family ipv4
+{% for n in neighbors %}
+      neighbor {{ n.ip }} activate
+{% endfor %}
+      network {{ router_id }}/32
+{% if has_vrf_tenant_a %}
+   !
+   vrf {{ vrf_name }}
+      rd {{ router_id }}:{{ l3_vni }}
+      route-target import evpn {{ l3_vni }}:{{ l3_vni }}
+      route-target export evpn {{ l3_vni }}:{{ l3_vni }}
+      router-id {{ router_id }}
+{% endif %}
+!
+end

@@ -438,9 +438,6 @@ work regardless of clock rollover.*
 - **Consolidated `requirements.txt`** to the repo root (was duplicated
   under `inventory/netbox/` and `automation/`). One pinned dependency
   list for the whole project now.
-- **Renamed `scripts/capture-golden.sh` → `scripts/save-configs.sh`.**
-  Same logic, simpler name; matches how it's referred to in CLAUDE.md
-  and the lab-lifecycle docs.
 
 ### Issues resolved
 

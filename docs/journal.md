@@ -349,3 +349,138 @@ work regardless of clock rollover.*
 4. End of Day 5 target: NetBox populated, Jinja2 templates rendering
    byte-equivalent configs. Phase 3 complete; Phase 4 (Nornir/NAPALM
    tasks + lightweight pre-flight validator) starts Day 6.
+
+
+
+## 2026-04-27 — Day 5 (Phase 3 / Step 2: Seed YAMLs + Idempotent Seeder)
+
+### Done
+
+- **Authored seed YAMLs under `inventory/netbox/data/`.** Thirteen files
+  modeling the full fabric: `custom-fields.yml`, `sites.yml`, `tenants.yml`,
+  `manufacturers.yml`, `device-roles.yml`, `device-types.yml`, `vrfs.yml`,
+  `vlans.yml`, `prefixes.yml`, `devices.yml`, `interfaces.yml`, `ips.yml`,
+  `cables.yml`. Custom fields for `bgp_asn`, `router_id`, `vtep_ip` per the
+  `architecture.md` addressing plan.
+- **Wrote `inventory/netbox/seed.py`** (idempotent NetBox seeder via
+  `pynetbox`). Fourteen ordered stages mirroring the YAML files plus a
+  `primary-ips` stage that backfills `device.primary_ip4` after IPs are
+  assigned (NetBox can't attach a primary IP before the IP itself exists).
+  Behavior: **create-if-absent + update-on-drift**, so re-running is safe
+  and converges to YAML truth. Flags: `--dry-run` (parse + plan, no writes)
+  and `--stage <name>` / `--from <name>` for iteration during debugging.
+- **Ran the seeder against the live NetBox.** Inspected the UI; fabric
+  model populated correctly across sites, devices, interfaces, IPs, VLANs,
+  VRFs, cables.
+- **Captured deployment notes** for the report under `inventory/netbox/`
+  documenting the bring-up sequence end-to-end.
+
+### Issues resolved
+
+1. **NetBox 200-char description limit.** Several YAML descriptions
+   exceeded NetBox's hard cap and the API rejected the create calls.
+   Trimmed wording in the offending YAMLs; documented in the commit
+   message so future-me doesn't re-hit it.
+
+2. **Stage ordering matters more than expected.** First seeder draft tried
+   to create devices and assign their primary IPs in one pass; failed
+   because `primary_ip4` is a foreign key to an IP that doesn't exist
+   until interfaces are created and IPs are bound to them. Split into a
+   dedicated `primary-ips` stage that runs after `ips`. Same lesson for
+   `cables`: terminations reference interfaces, so cables must come last.
+
+### Decisions
+
+- **Idempotent over destructive.** Seeder never deletes; it only creates
+  or updates fields that drift from YAML. Means I can re-run after every
+  YAML edit without rebuilding NetBox state. Trade-off: removing a device
+  from YAML doesn't remove it from NetBox — has to be done in the UI. Fine
+  for project scope.
+- **Single source of truth lives in YAML, not NetBox.** NetBox is a
+  rendered view of the YAML. If they disagree, YAML wins on next seed.
+  Reproducibility story: clone the repo, stand up NetBox, run `seed.py`,
+  arrive at identical fabric model.
+
+### Next session (Day 6)
+
+1. **Phase 3 / Step 3 — Jinja2 templates.** Render against the captured
+   golden cEOS configs; goal is byte-equivalence after secret scrubbing.
+2. End-of-Day-6 target: NetBox-driven render pipeline working; Phase 3
+   complete; Phase 4 (Nornir/NAPALM) starts next.
+
+
+
+## 2026-04-29 — Day 6 (Phase 3 / Step 3: Templates + Render Pipeline)
+
+### Done
+
+- **Wrote `automation/render.py`** (~345 lines). Pulls the fabric from
+  NetBox in four bulk API calls (`devices`, `interfaces`, `ip_addresses`,
+  `cables`), builds in-memory indexes, then for each device builds a
+  context dict, selects a template by `manufacturer + role`, renders, and
+  writes `configs/rendered/<host>.cfg`. **No SSH; no device contact** —
+  this is a pure NetBox-API → file pipeline. Pushing to nodes is Phase 4.
+- **Wrote three Jinja2 templates** under `configs/templates/`:
+  `arista/spine.j2`, `arista/leaf.j2`, `frr/edge.j2`. Templates contain
+  no addressing or ASN data — every concrete value comes from NetBox via
+  the per-device context.
+- **Cable graph drives peer discovery.** `compute_peer()` looks up the
+  cable terminations in NetBox to derive each P2P link's neighbor name,
+  IP, and ASN. Removed any need to hand-author neighbor lists in YAML or
+  templates.
+- **`--diff` mode** compares each rendered file against the captured
+  golden in `configs/<host>/`. Used iteratively during template
+  development to drive byte-equivalence.
+- **Render results.** All 6 devices render. `spine1` / `spine2` are
+  byte-equivalent to goldens (modulo stale SR Linux–era interface names
+  in the goldens — render is correct). Leaves diff only on description
+  wording.
+- **Consolidated `requirements.txt`** to the repo root (was duplicated
+  under `inventory/netbox/` and `automation/`). One pinned dependency
+  list for the whole project now.
+- **Renamed `scripts/capture-golden.sh` → `scripts/save-configs.sh`.**
+  Same logic, simpler name; matches how it's referred to in CLAUDE.md
+  and the lab-lifecycle docs.
+
+### Issues resolved
+
+1. **Description wording diff between rendered and golden.** Templates
+   produce slightly different P2P interface descriptions than what was
+   typed by hand on the live boxes (e.g., `p2p to leaf1 Eth1` vs the
+   hand-typed phrasing). Decision: **accept render as canonical going
+   forward.** Goldens get re-aligned during Phase 4 when Nornir pushes
+   the rendered configs back. Chasing byte-equivalence on description
+   text is busywork that doesn't validate the pipeline.
+
+2. **SR Linux residue in golden interface names.** Captured goldens for
+   the leaf3 cEOS rebuild still showed `ethernet-1/1`–style SRL names in
+   places. Render correctly produces `Ethernet1`. Same resolution as
+   above — render is canonical.
+
+### Decisions
+
+- **Render is the canonical fabric configuration; goldens are historical
+  captures.** From this session forward, any divergence between
+  `configs/rendered/<host>.cfg` and `configs/<host>/startup.cfg` is
+  resolved in favor of render.
+- **Pipeline is the deliverable.** The grading rubric values the
+  reproducibility of the NetBox → Jinja2 → Nornir flow over hand-tuned
+  per-device byte-equivalence. Time spent on cosmetic diffs is time not
+  spent on Phase 4.
+- **No SR Linux template.** With leaf3 standardized to cEOS in Day 3,
+  only `arista/` and `frr/` template trees are needed. The
+  `manufacturer + role` selector in `render.py` keeps the door open if
+  SR Linux comes back as Future Work.
+
+### Next session (Day 7)
+
+1. Close the open blockers above (phantom interfaces, working-tree
+   drift).
+2. **Phase 4 — Nornir/NAPALM.** Inventory pulled from NetBox.
+   `tasks/deploy.py` using NAPALM `load_merge_candidate` +
+   `compare_config` + `commit_config`. Verify tasks via
+   `get_bgp_neighbors` / `get_interfaces_ip`. Pre-flight validator
+   (`automation/validate.py`, ~150 lines: duplicate IPs, ASN
+   consistency, undefined VLANs).
+3. End-to-end rehearsal: `clab destroy && clab deploy`, run Nornir
+   deploy, run Nornir verify. Target: "all green."

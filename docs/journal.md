@@ -648,3 +648,44 @@ work regardless of clock rollover.*
 4. End-of-Day-8 target: Phase 4 fully closed, Phase 5 functional.
    Phase 6 (gNMI + Grafana) is the cut candidate if anything slips —
    per Day 6 timeline reality check.
+
+## 2026-05-01 — Day 8 (Phase 4 Close-Out: Pre-Flight Validator + Dispatcher)
+
+### Done
+
+- **Wrote `automation/validate.py`** Offline pre-flight
+  for `configs/rendered/*.cfg` — no SSH, no NetBox required for three of
+  the four checks. Designed for CI: exits 1 on any finding, 0 on all
+  green. Four checks:
+  1. **duplicate-ip** — same address on two interfaces across the fabric
+     (anycast `ip address virtual` is parsed into a separate set so it
+     never lands in the dup scan).
+  2. **peer-asn** — every `neighbor <ip> remote-as <asn>` is checked
+     against the ASN of the device that actually owns `<ip>` in the
+     rendered set. Catches typo'd remote-as values and references to
+     IPs no rendered device owns.
+  3. **undefined-vlan** — every `switchport access vlan N` requires a
+     `vlan N` declaration in the same file.
+  4. **local-asn** *(only if `NETBOX_TOKEN` is set)* — `router bgp <asn>`
+     in the rendered config matches the device's `bgp_asn` custom field
+     in NetBox. Closes the loop on render correctness.
+- **Wrote `automation/run.py`** dispatcher. One stable entrypoint
+  `python -m automation.run {render|validate|deploy|verify|backup}`.
+  Mutates `sys.argv` and forwards to the matching module's `main()`,
+  so per-subcommand flags (`--device`, `--commit`, `--diff`, `--quiet`)
+  pass through unchanged. Heavy deps (Nornir/NAPALM) only import when
+  their subcommand actually runs — `validate` and `render` stay fast.
+
+### Decisions
+
+- **Dispatcher is a thin shim, not an argparse rebuild.** `run.py`
+  rewrites `sys.argv` and calls each module's existing `main()` rather
+  than re-implementing every subcommand's flag surface. Keeps the
+  delegated scripts as first-class entrypoints (still runnable
+  directly), and `run.py` stays under 60 lines.
+- **`validate.py` accepts FRR.** `edge1` is filtered out of
+  Nornir-managed deploys (no NAPALM FRR driver), but `render.py` still
+  produces `configs/rendered/edge1.cfg`. The validator parses it
+  alongside the cEOS configs so the peer-ASN check sees both sides of
+  the spine1 ↔ edge1 session, which is what catches a typo on either
+  side.

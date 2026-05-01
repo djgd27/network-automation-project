@@ -1,0 +1,43 @@
+name: network-ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  offline-pipeline:
+    name: render + validate
+    runs-on: [self-hosted, linux, clab-lab]
+
+    env:
+      NETBOX_URL: ${{ secrets.NETBOX_URL }}
+      NETBOX_TOKEN: ${{ secrets.NETBOX_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Render configs from NetBox
+        run: python -m automation.run render
+
+      - name: Pre-flight validate
+        run: python -m automation.run validate
+
+      - name: Upload rendered configs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-configs
+          path: configs/rendered/
+          retention-days: 7

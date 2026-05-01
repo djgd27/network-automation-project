@@ -1,0 +1,82 @@
+% =====================================================================
+% Preamble — packages, formatting, and document-wide settings.
+% Kept separate from main.tex so the section structure is easy to read.
+% =====================================================================
+
+% ---- Geometry & typography -------------------------------------------
+\usepackage[letterpaper, margin=1in]{geometry}
+\usepackage{microtype}                  % subtle kerning improvements
+\usepackage{parskip}                    % blank line between paragraphs
+
+% ---- Math (light use; available if needed) ---------------------------
+\usepackage{amsmath, amssymb}
+
+% ---- Graphics & figures ----------------------------------------------
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{float}                      % [H] placement specifier
+\usepackage{caption}
+\captionsetup{font=small, labelfont=bf}
+
+% ---- Tables ----------------------------------------------------------
+\usepackage{booktabs}                   % \toprule, \midrule, \bottomrule
+\usepackage{array}
+\usepackage{tabularx}
+
+% ---- Code listings ---------------------------------------------------
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{lstbg}{RGB}{248,248,248}
+\definecolor{lstkw}{RGB}{0,80,160}
+\definecolor{lstcm}{RGB}{120,120,120}
+\definecolor{lstst}{RGB}{160,40,40}
+\lstset{
+    backgroundcolor=\color{lstbg},
+    basicstyle=\footnotesize\ttfamily,
+    keywordstyle=\color{lstkw}\bfseries,
+    commentstyle=\color{lstcm}\itshape,
+    stringstyle=\color{lstst},
+    breaklines=true,
+    breakatwhitespace=true,
+    showstringspaces=false,
+    frame=single,
+    framesep=4pt,
+    rulecolor=\color{black!20},
+    captionpos=b,
+    aboveskip=1em,
+    belowskip=1em,
+}
+% YAML and Jinja2 are not built-in; aliasing to similar known languages.
+\lstdefinelanguage{yaml}{
+    keywords={true,false,null,name,description,site,role,device,interface,vrf,vlan,prefix,a,b,kind,image},
+    keywordstyle=\color{lstkw}\bfseries,
+    sensitive=true,
+    comment=[l]{\#},
+    morestring=[b]',
+    morestring=[b]",
+}
+
+% ---- Hyperlinks (load late, near end of preamble) --------------------
+\usepackage[
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue!60!black,
+]{hyperref}
+
+% ---- References ------------------------------------------------------
+% Using natbib + a plain style for now; can switch to IEEEtran later.
+% \usepackage[numbers,sort&compress]{natbib}
+
+% ---- Headers/footers (light) -----------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape Network Automation PoC}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\setlength{\headheight}{14pt}
+
+% ---- Section numbering depth ----------------------------------------
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}

@@ -1,0 +1,43 @@
+% =====================================================================
+% MSIS603 — Network Virtualization, Final Project
+% Network Automation PoC: NetBox-driven EVPN-VXLAN fabric
+%
+% Build:        make
+% Clean:        make clean
+% Engine:       pdflatex (via latexmk -pdf)
+% =====================================================================
+\documentclass[11pt, letterpaper]{article}
+
+\input{preamble}
+
+% ---- Title block ------------------------------------------------------
+\title{
+    \vspace{-1.5cm}
+    \LARGE Network Automation Proof-of-Concept \\[0.3em]
+    \large A NetBox-Driven, CI/CD-Validated EVPN-VXLAN Fabric \\[0.3em]
+    \large in Containerlab
+}
+\author{
+    David Galindo Delgado \\
+    \small MSIS603 --- Network Virtualization \\
+    \small Marist University
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+% Abstract goes on the title page block, not its own page, for compactness.
+\begin{abstract}
+    \input{sections/00-abstract}
+\end{abstract}
+
+\thispagestyle{fancy}
+
+\tableofcontents
+\newpage
+
+
+
+\end{document}

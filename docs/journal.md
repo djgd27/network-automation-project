@@ -481,3 +481,170 @@ work regardless of clock rollover.*
    consistency, undefined VLANs).
 3. End-to-end rehearsal: `clab destroy && clab deploy`, run Nornir
    deploy, run Nornir verify. Target: "all green."
+
+
+
+## 2026-04-30 — Day 7 (Phase 4: Nornir/NAPALM Pipeline)
+
+### Done
+
+- **Phase 4 plumbing validated end-to-end** in three incremental smoke
+  tests, each ratcheting up the stack: NAPALM-only against leaf1 →
+  Nornir+NetBox+transform inline against all 5 cEOS in parallel → same
+  via the promoted `automation/nornir_inventory.py` module.
+- **Wrote `automation/nornir_inventory.py`.** NetBox inventory plugin
+  pulls every device, then a transform overrides each host's
+  `hostname` from the unreachable Loopback0 (`10.0.0.x`) to the clab
+  short name (`leaf1`, `spine1`, ...), which `/etc/hosts` resolves to
+  the clab mgmt IP. Filter excludes `edge1` (no NAPALM FRR driver) and
+  the servers (not modeled in NetBox). Credentials from
+  `NORNIR_USERNAME` / `NORNIR_PASSWORD` env vars; platform mapped from
+  NetBox manufacturer slug.
+- **Wrote `automation/tasks/backup.py`.** Pulls running configs via
+  NAPALM with `sanitized=True` (driver-level password redaction) AND a
+  `DROP_PATTERNS` scrubber that strips cEOS boilerplate stanzas the
+  renderer doesn't manage (mgmt API enable, `system l1`, the password
+  line, Management0 with clab-assigned IP, mgmt default route). Output
+  is byte-comparable to `render.py`'s output, so any diff between
+  rendered and golden becomes a real signal again.
+- **Wrote `automation/tasks/verify.py`.** Two read-only assertions per
+  host: every BGP neighbor `is_up=True`, and the device's Loopback0 IP
+  matches NetBox `primary_ip4`. Exits non-zero on any failure for
+  CI-friendly behavior.
+- **Wrote `automation/tasks/deploy.py`.** Loads
+  `configs/rendered/<host>.cfg` via NAPALM `load_merge_candidate`,
+  prints the diff, defaults to dry-run, `--commit` applies. `--device`
+  flag for single-host targeting.
+- **Fixed `configs/templates/arista/leaf.j2`** — added two lines that
+  exist on every leaf in the live fabric but were missing from the
+  template:
+  - `vxlan vrf {{ vrf_name }} vni {{ l3_vni }}` under interface Vxlan1
+    (gated on `has_vrf_tenant_a`)
+  - `redistribute connected` under router bgp / vrf TENANT_A
+- **First Phase 4 deploy committed across all 5 cEOS.** Started with
+  `leaf1 --commit` to validate the commit path while limiting blast
+  radius. Verify stayed green; BGP didn't blink. Then dry-run +
+  `--commit` for the remaining 4 in parallel. Diffs were cosmetic only
+  — interface description normalizations (spine1 / spine2 Eth3
+  descriptions: `p2p to leaf3 ethernet-1/1` → `p2p to leaf3 Eth1`,
+  finally cleaning up the SR Linux era residue noted in Days 3 and 6).
+- **Re-captured goldens via `backup.py` post-deploy.**
+  `configs/<host>/startup.cfg` is now byte-equivalent to live state on
+  all 5 cEOS, with secrets and boilerplate stripped.
+  `render.py --diff` is effectively zero on the routing surface;
+  `git diff configs/` shows only the legitimate description
+  normalizations.
+
+### Issues resolved
+
+1. **NetBox `primary_ip4` is unreachable from the automation VM.**
+   NetBox correctly stores `primary_ip4` as the Loopback0 (per the
+   loopback-only design in `architecture.md`), but those /32s are only
+   reachable inside the fabric — the VM has no route to `10.0.0.0/24`.
+   First instinct was to add a `mgmt_ip` custom field in NetBox and
+   sync it from `topology-data.json`. Lighter fix: a Nornir host
+   transform that overrides `host.hostname` from the loopback to
+   `host.name`, which `/etc/hosts` resolves to the clab mgmt IP.
+   Survives `clab destroy && clab deploy` because container names are
+   stable even when mgmt IPs are not. Zero NetBox edits, zero sync
+   drift, ~5 lines of Python.
+
+2. **Raw NAPALM `get_config` exposed password hashes and cEOS
+   boilerplate.** First backup.py write would have committed sha512
+   hashes for every cEOS device. Caught at the diff review step before
+   any commit. Fixed by combining `sanitized=True` (NAPALM driver
+   redacts the secret value) with a `DROP_PATTERNS` list that strips
+   whole stanzas the renderer doesn't manage. Verified
+   `grep "secret sha512" configs/*/startup.cfg` returns zero matches.
+
+3. **`leaf.j2` was missing L3 VNI binding and `redistribute
+   connected`.** Surfaced by the first end-to-end backup → render
+   diff: live devices had `vxlan vrf TENANT_A vni 10999` under Vxlan1
+   and `redistribute connected` under `router bgp / vrf TENANT_A`;
+   render output didn't. Without the fix, `deploy.py` would have
+   stripped L3 EVPN symmetric IRB from all three leaves, breaking Demo
+   Story #2 (server1 → server3). **This is exactly the kind of
+   silent-divergence bug the Phase 4 full-circle pipeline was supposed
+   to catch — and did, before any push.** Day 6's "render is
+   canonical" claim was overconfident; Day 7's pipeline corrected it.
+
+4. **Phantom `Ethernet0` and `Ethernet4` on leaf1 in NetBox blocked
+   deploy.** First deploy attempt failed at `CLI command 8 of 65
+   'interface Ethernet0' failed: invalid command`. cEOS numbering
+   starts at Ethernet1; there is no Eth0. The phantom interface
+   records had lived in NetBox since Day 5 iteration on the seed
+   YAMLs — the seeder is `create-on-update, never destroy` (Day 5
+   design decision), so stale records linger. Fix: open NetBox UI,
+   delete the two phantom interface records.
+
+5. **Accidental deletion of the entire `leaf1` device record while
+   trying to delete its phantom interfaces.** Mis-clicked "delete
+   device" instead of "delete selected interfaces." Recovery: re-ran
+   `inventory/netbox/seed.py`. The idempotent + create-if-absent +
+   primary_ip4-second-pass + cables-last design from Day 5 rebuilt
+   leaf1 plus all its interfaces, IPs, primary_ip4, and cable
+   terminations from the YAML in a single pass. End to end took under
+   10 seconds. **This is a live demonstration of the "YAML is source
+   of truth, NetBox is rebuildable" decision from Day 5 actually
+   working under stress.** Worth highlighting as a methodology proof
+   point in the final report.
+
+### Decisions
+
+- **`/etc/hosts` short name as the Nornir connection target.** Picked
+  over (a) storing a duplicate mgmt IP as a NetBox custom field synced
+  from `topology-data.json`, and (b) rewriting `primary_ip4` to the
+  mgmt subnet (which would corrupt the semantic meaning of "primary
+  IP"). Survives clab redeploy, requires zero NetBox edits, fewest
+  moving parts.
+- **`edge1` (FRR) filtered out of the Nornir-managed surface.** NAPALM
+  has no production-ready FRR driver; the available `napalm-frr` is
+  read-only and limited. edge1's `frr.conf` stays bind-mounted via
+  `lab.clab.yml` (the existing pattern from Day 1). edge1 is still
+  exercised in verify indirectly via spine1's BGP neighbor checks.
+- **`load_merge_candidate`, not `load_replace_candidate`.** Rendered
+  configs are intentionally minimal: no `username admin`, no
+  `management api http-commands`, no `interface Management0`. Replace
+  would strip those device-side defaults — including the eAPI enable
+  Nornir is *currently using* — and cut SSH/eAPI mid-push. Merge is
+  additive, idempotent for our use case, and safe.
+- **Default behavior is dry-run; `--commit` applies.** Same UX shape
+  as `terraform plan` / `terraform apply`. Diff is always shown;
+  nothing changes until explicitly asked.
+- **Accept render as canonical, then prove it via deploy + backup.**
+  Day 6 punted the description-wording diffs and called render
+  canonical on faith; Day 7 actually pushed render to the boxes,
+  recaptured goldens, and proved convergence. The Day 6 parenthetical
+  on `architecture.md` Step 3 ("goldens re-align in Phase 4 push") is
+  now executed.
+
+### Issues / blockers (open)
+
+- [ ] **Phase 4 has two pieces left.** `automation/validate.py`
+      (duplicate IPs across rendered configs, ASN cross-check vs NetBox, undefined VLANs on trunks) —
+      needed for Phase 5 CI. `automation/run.py` (dispatcher: `python run.py {render|validate|deploy|verify backup}`) — sugar but cleaner UX.
+- [ ] **Demo Story #3 (server1 → 8.8.8.0/24 via edge1) still unverified.** 
+      `architecture.md:176` lists three demo stories;
+      Stories 1 and 2 are confirmed working as of this session,
+      Story 3 has never been tested end to end. Either verify in
+      Day 8 or scope-cut before recording.
+
+### Next session (Day 8)
+
+1. Close the Phase 4 leftovers: `automation/validate.py` and
+   `automation/run.py` dispatcher. End-to-end rehearsal:
+   `./scripts/lab-down.sh && sudo containerlab deploy -t topology/lab.clab.yml &&
+   python automation/run.py render && python automation/run.py validate &&
+   python automation/run.py deploy --commit && python automation/run.py verify`
+   → all green. Capture as evidence for the report.
+2. **Phase 5 — CI/CD via GitHub Actions self-hosted runner**, per
+   `plan.txt:79-95`. Self-hosted because the lab lives on this VM —
+   no remote runner can reach it. Workflow: lint → render → validate
+   → ephemeral `clab deploy` → Nornir deploy → verify →
+   `clab destroy` (always, even on failure, via `if: always()`).
+   Demonstrate failure mode with a deliberately-bad PR (duplicate IP
+   caught at validate step, merge blocked).
+3. Verify or scope-cut Demo Story 3.
+4. End-of-Day-8 target: Phase 4 fully closed, Phase 5 functional.
+   Phase 6 (gNMI + Grafana) is the cut candidate if anything slips —
+   per Day 6 timeline reality check.

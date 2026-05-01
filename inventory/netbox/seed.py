@@ -486,9 +486,27 @@ def stage_cables(nb, r, dry_run):
             f'cable:{e["a"]["device"]}.{e["a"]["interface"]} ↔ '
             f'{e["b"]["device"]}.{e["b"]["interface"]}'
         )
+        action = "CREATE"
         if a_iface.cable is not None:
-            s.unchanged += 1
-            continue
+            # Existing cable on A-side, verify B-side matches YAML.
+            # NetBox keeps half-broken cables when one side is deleted (e.g. a
+            # device record is removed); a plain "skip if cable present" check
+            # would silently leave that drift in place. Compare B-terminations
+            # to YAML and repair if they diverge.
+            cable = nb.dcim.cables.get(a_iface.cable.id)
+            actual_b_ids = sorted(
+                t.object_id for t in (cable.b_terminations or [])
+                if t.object_type == "dcim.interface"
+            )
+            if actual_b_ids == [b_iface.id]:
+                s.unchanged += 1
+                continue
+            action = "REPAIR"
+            if not dry_run:
+                try:
+                    cable.delete()
+                except pynetbox.RequestError as ex:
+                    raise SystemExit(f"DELETE failed for {label}: {ex.error}") from ex
         payload = {
             "a_terminations": [
                 {"object_type": "dcim.interface", "object_id": a_iface.id}
@@ -500,15 +518,17 @@ def stage_cables(nb, r, dry_run):
             "type": e.get("type", "cat6"),
         }
         if dry_run:
-            print(f"  CREATE  [dry] {label}")
+            print(f"  {action}  [dry] {label}")
+        else:
+            try:
+                nb.dcim.cables.create(payload)
+            except pynetbox.RequestError as ex:
+                raise SystemExit(f"CREATE failed for {label}: {ex.error}") from ex
+            print(f"  {action}        {label}")
+        if action == "CREATE":
             s.created += 1
-            continue
-        try:
-            nb.dcim.cables.create(payload)
-        except pynetbox.RequestError as ex:
-            raise SystemExit(f"CREATE failed for {label}: {ex.error}") from ex
-        print(f"  CREATE        {label}")
-        s.created += 1
+        else:
+            s.updated += 1
     return s
 
 

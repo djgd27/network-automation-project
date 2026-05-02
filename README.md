@@ -39,3 +39,4 @@ and component overview.
 ## Report and Demo
 
 *(Links to the final report PDF and demo video will go here.)*
+<- Day 3 plan: cleanup → Pass 3 ( EVPN overlay ) → Pass 4 ( VXLAN tenants ci demo: green path -->

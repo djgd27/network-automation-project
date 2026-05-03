@@ -31,11 +31,11 @@ if [[ "$PURGE" == "1" ]]; then
   warn "PURGE mode: --cleanup will be used. all saved configs in the runtime dir will be DELETED."
   confirm "continue?" || { info "aborted."; exit 0; }
   info "destroying lab + purging runtime dir"
-  sudo containerlab destroy $(clab_flags) --graceful --cleanup -t "$TOPO"
+  containerlab destroy $(clab_flags) --graceful --cleanup -t "$TOPO"
 else
   confirm "destroy lab (runtime dir preserved)?" || { info "aborted."; exit 0; }
   info "destroying lab (preserving runtime dir and saved configs)"
-  sudo containerlab destroy $(clab_flags) --graceful -t "$TOPO"
+  containerlab destroy $(clab_flags) --graceful -t "$TOPO"
 fi
 
 info "lab destroyed."

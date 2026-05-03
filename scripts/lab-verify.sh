@@ -23,7 +23,7 @@ fail=0
 info "checking /etc/hosts for clab entries..."
 if grep -qE 'Kind: (arista_ceos|nokia_srlinux|linux)' /etc/hosts; then
   # entries exist — is a lab actually running?
-  if sudo containerlab inspect $(clab_flags) -t "$TOPO" >/dev/null 2>&1; then
+  if containerlab inspect $(clab_flags) -t "$TOPO" >/dev/null 2>&1; then
     info "lab is running, hosts entries are expected"
   else
     warn "stale clab entries in /etc/hosts (no lab running):"

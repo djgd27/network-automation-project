@@ -1,0 +1,9 @@
+===== STEP 2: validate =====
+Validating 6 rendered config(s) from configs/rendered
+
+  OK  duplicate-ip
+  OK  peer-asn
+  OK  undefined-vlan
+  OK  local-asn
+
+OK — 6 configs, all checks passed

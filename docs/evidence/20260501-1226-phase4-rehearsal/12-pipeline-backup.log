@@ -1,0 +1,22 @@
+===== STEP 5: backup =====
+backup**************************************************************************
+* leaf1 ** changed : False *****************************************************
+vvvv backup ** changed : False vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv INFO
+wrote configs/leaf1/startup.cfg (1793 bytes)
+^^^^ END backup ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* leaf2 ** changed : False *****************************************************
+vvvv backup ** changed : False vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv INFO
+wrote configs/leaf2/startup.cfg (1793 bytes)
+^^^^ END backup ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* leaf3 ** changed : False *****************************************************
+vvvv backup ** changed : False vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv INFO
+wrote configs/leaf3/startup.cfg (1793 bytes)
+^^^^ END backup ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* spine1 ** changed : False ****************************************************
+vvvv backup ** changed : False vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv INFO
+wrote configs/spine1/startup.cfg (1514 bytes)
+^^^^ END backup ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* spine2 ** changed : False ****************************************************
+vvvv backup ** changed : False vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv INFO
+wrote configs/spine2/startup.cfg (1307 bytes)
+^^^^ END backup ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

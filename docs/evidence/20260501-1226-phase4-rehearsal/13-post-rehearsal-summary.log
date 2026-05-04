@@ -1,0 +1,88 @@
+=== rendered/leaf1.cfg diff (expect: BGP stanza restored) ===
+diff --git a/configs/rendered/leaf1.cfg b/configs/rendered/leaf1.cfg
+index ed75717..f3ca9c3 100644
+--- a/configs/rendered/leaf1.cfg
++++ b/configs/rendered/leaf1.cfg
+@@ -9,10 +9,12 @@ vlan 100
+ vrf instance TENANT_A
+ !
+ interface Ethernet1
++   description p2p to spine1 Eth1
+    no switchport
+    ip address 10.1.1.1/31
+ !
+ interface Ethernet2
++   description p2p to spine2 Eth1
+    no switchport
+    ip address 10.1.2.1/31
+ !
+@@ -44,6 +46,12 @@ ip routing vrf TENANT_A
+ router bgp 65101
+    router-id 10.0.0.11
+    no bgp default ipv4-unicast
++   neighbor 10.1.1.0 remote-as 65001
++   neighbor 10.1.1.0 description spine1
++   neighbor 10.1.1.0 send-community extended
++   neighbor 10.1.2.0 remote-as 65002
++   neighbor 10.1.2.0 description spine2
++   neighbor 10.1.2.0 send-community extended
+    !
+    vlan 100
+       rd 10.0.0.11:10100
+@@ -51,8 +59,12 @@ router bgp 65101
+       redistribute learned
+    !
+    address-family evpn
++      neighbor 10.1.1.0 activate
++      neighbor 10.1.2.0 activate
+    !
+    address-family ipv4
++      neighbor 10.1.1.0 activate
++      neighbor 10.1.2.0 activate
+       network 10.0.0.11/32
+    !
+    vrf TENANT_A
+=== spine1/startup.cfg diff ===
+diff --git a/configs/spine1/startup.cfg b/configs/spine1/startup.cfg
+index dcd345e..6226c67 100644
+--- a/configs/spine1/startup.cfg
++++ b/configs/spine1/startup.cfg
+@@ -13,7 +13,7 @@ interface Ethernet2
+    ip address 10.1.1.2/31
+ !
+ interface Ethernet3
+-   description p2p to leaf3 ethernet-1/1
++   description p2p to leaf3 Eth1
+    no switchport
+    ip address 10.1.1.4/31
+ !
+=== leaf1/startup.cfg diff ===
+diff --git a/configs/leaf1/startup.cfg b/configs/leaf1/startup.cfg
+index fde4a40..7977e5b 100644
+--- a/configs/leaf1/startup.cfg
++++ b/configs/leaf1/startup.cfg
+@@ -18,20 +18,20 @@ interface Ethernet2
+    ip address 10.1.2.1/31
+ !
+ interface Ethernet3
+-   description Server1 access port - VLAN 100
++   description Access port to server1 (untagged VLAN 100)
+    switchport access vlan 100
+ !
+ interface Loopback0
+-   description Router-ID and BGP source, VTEP IP
++   description Router-ID, BGP source, VTEP source
+    ip address 10.0.0.11/32
+ !
+ interface Vlan100
+-   description TENANT_A VLAN 100 anycast gateway
++   description Tenant A SVI, anycast gateway 10.100.0.1/24
+    vrf TENANT_A
+    ip address virtual 10.100.0.1/24
+ !
+ interface Vxlan1
+-   description VTEP for TENANT_A
++   description VTEP source, sourced from Loopback0; L2 VNI 10100, L3 VNI 10999
+    vxlan source-interface Loopback0
+    vxlan udp-port 4789
+    vxlan vlan 100 vni 10100

@@ -1,0 +1,15 @@
+===== STEP 1: render =====
+NetBox 4.5.8 at http://127.0.0.1:8000
+
+== edge1 ==  -> configs/rendered/edge1.cfg
+
+== leaf1 ==  -> configs/rendered/leaf1.cfg
+
+== leaf2 ==  -> configs/rendered/leaf2.cfg
+
+== leaf3 ==  -> configs/rendered/leaf3.cfg
+
+== spine1 ==  -> configs/rendered/spine1.cfg
+
+== spine2 ==  -> configs/rendered/spine2.cfg
+

@@ -1,0 +1,14 @@
+12:48:10 INFO Parsing & checking topology file=lab.clab.yml
+12:48:10 INFO Parsing & checking topology file=lab.clab.yml
+12:48:10 INFO Destroying lab name=network-automation-project
+12:48:10 INFO Removed container name=edge1
+12:48:10 INFO Removed container name=server1
+12:48:10 INFO Removed container name=server2
+12:48:10 INFO Removed container name=server3
+12:48:11 INFO Removed container name=spine1
+12:48:11 INFO Removed container name=spine2
+12:48:11 INFO Removed container name=leaf3
+12:48:11 INFO Removed container name=leaf2
+12:48:11 INFO Removed container name=leaf1
+12:48:11 INFO Removing host entries path=/etc/hosts
+12:48:11 INFO Removing SSH config path=/etc/ssh/ssh_config.d/clab-network-automation-project.conf

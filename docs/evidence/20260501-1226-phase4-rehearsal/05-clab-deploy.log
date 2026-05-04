@@ -1,0 +1,73 @@
+12:52:40 INFO Containerlab started version=0.74.3
+12:52:40 INFO Parsing & checking topology file=lab.clab.yml
+12:52:40 INFO Creating docker network name=clab IPv4 subnet=172.20.20.0/24 IPv6 subnet="" MTU=0
+12:52:40 INFO Creating lab directory path=/home/jointstudy/Documents/network-automation-project/topology/clab-network-automation-project
+12:52:41 INFO Creating container name=server1
+12:52:41 INFO Creating container name=server2
+12:52:41 INFO Creating container name=server3
+12:52:41 INFO Creating container name=edge1
+12:52:41 INFO Creating container name=spine2
+12:52:41 INFO Creating container name=leaf1
+12:52:41 INFO Creating container name=leaf3
+12:52:41 INFO Creating container name=spine1
+12:52:41 INFO Creating container name=leaf2
+12:52:41 INFO Created link: spine2:eth1 ▪┄┄▪ leaf1:eth2
+12:52:41 INFO Created link: spine2:eth3 ▪┄┄▪ leaf3:eth2
+12:52:41 INFO Running postdeploy actions for Arista cEOS 'spine2' node
+12:52:41 INFO Created link: leaf1:eth3 ▪┄┄▪ server1:eth1
+12:52:41 INFO Running postdeploy actions for Arista cEOS 'leaf1' node
+12:52:41 INFO Created link: leaf3:eth3 ▪┄┄▪ server3:eth1
+12:52:41 INFO Running postdeploy actions for Arista cEOS 'leaf3' node
+12:52:41 INFO Created link: spine1:eth1 ▪┄┄▪ leaf1:eth1
+12:52:41 INFO Created link: spine1:eth3 ▪┄┄▪ leaf3:eth1
+12:52:41 INFO Created link: spine1:eth4 ▪┄┄▪ edge1:eth1
+12:52:41 INFO Running postdeploy actions for Arista cEOS 'spine1' node
+12:52:42 INFO Created link: spine1:eth2 ▪┄┄▪ leaf2:eth1
+12:52:42 INFO Created link: spine2:eth2 ▪┄┄▪ leaf2:eth2
+12:52:42 INFO Created link: leaf2:eth3 ▪┄┄▪ server2:eth1
+12:52:42 INFO Running postdeploy actions for Arista cEOS 'leaf2' node
+12:53:33 INFO Executed command node=server1 command="ip addr add 10.100.0.101/24 dev eth1" stdout=""
+12:53:33 INFO Executed command node=server1 command="ip link set eth1 up" stdout=""
+12:53:33 INFO Executed command node=server1 command="ip route del default" stdout=""
+12:53:33 INFO Executed command node=server1 command="ip route add default via 10.100.0.1 dev eth1" stdout=""
+12:53:33 INFO Executed command node=server3 command="ip addr add 10.101.0.103/24 dev eth1" stdout=""
+12:53:33 INFO Executed command node=server3 command="ip link set eth1 up" stdout=""
+12:53:33 INFO Executed command node=server3 command="ip route del default" stdout=""
+12:53:33 INFO Executed command node=server3 command="ip route add default via 10.101.0.1 dev eth1" stdout=""
+12:53:33 INFO Executed command node=server2 command="ip addr add 10.100.0.102/24 dev eth1" stdout=""
+12:53:33 INFO Executed command node=server2 command="ip link set eth1 up" stdout=""
+12:53:33 INFO Executed command node=server2 command="ip route del default" stdout=""
+12:53:33 INFO Executed command node=server2 command="ip route add default via 10.100.0.1 dev eth1" stdout=""
+12:53:34 INFO Adding host entries path=/etc/hosts
+12:53:34 INFO Adding SSH config for nodes path=/etc/ssh/ssh_config.d/clab-network-automation-project.conf
+12:53:34 INFO containerlab version
+─────────────────────────────────────────────────────────────
+   Name        Kind/Image        State   IPv4/6 Address 
+─────────────────────────────────────────────────────────────
+│ edge1   │ linux                │ running │ 172.20.20.5    │
+│         │ frrouting/frr:latest │         │ N/A            │
+├─────────┼──────────────────────┼─────────┼────────────────┤
+│ leaf1   │ arista_ceos          │ running │ 172.20.20.7    │
+│         │ ceos:4.36.0F         │         │ N/A            │
+├─────────┼──────────────────────┼─────────┼────────────────┤
+│ leaf2   │ arista_ceos          │ running │ 172.20.20.10   │
+│         │ ceos:4.36.0F         │         │ N/A            │
+├─────────┼──────────────────────┼─────────┼────────────────┤
+│ leaf3   │ arista_ceos          │ running │ 172.20.20.8    │
+│         │ ceos:4.36.0F         │         │ N/A            │
+├─────────┼──────────────────────┼─────────┼────────────────┤
+│ server1 │ linux                │ running │ 172.20.20.2    │
+│         │ alpine:latest        │         │ N/A            │
+├─────────┼──────────────────────┼─────────┼────────────────┤
+│ server2 │ linux                │ running │ 172.20.20.3    │
+│         │ alpine:latest        │         │ N/A            │
+├─────────┼──────────────────────┼─────────┼────────────────┤
+│ server3 │ linux                │ running │ 172.20.20.4    │
+│         │ alpine:latest        │         │ N/A            │
+├─────────┼──────────────────────┼─────────┼────────────────┤
+│ spine1  │ arista_ceos          │ running │ 172.20.20.9    │
+│         │ ceos:4.36.0F         │         │ N/A            │
+├─────────┼──────────────────────┼─────────┼────────────────┤
+│ spine2  │ arista_ceos          │ running │ 172.20.20.6    │
+│         │ ceos:4.36.0F         │         │ N/A            │
+╰─────────┴──────────────────────┴─────────┴────────────────╯

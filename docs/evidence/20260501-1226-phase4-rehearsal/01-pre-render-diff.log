@@ -1,0 +1,266 @@
+NetBox 4.5.8 at http://127.0.0.1:8000
+
+== edge1 ==  -> configs/rendered/edge1.cfg
+--- configs/edge1/frr.conf
++++ configs/rendered/edge1.cfg
+@@ -3,11 +3,11 @@
+ hostname edge1
+ no ipv6 forwarding
+ !
++interface eth1
++ ip address 10.2.0.1/31
++!
+ interface lo
+  ip address 10.0.0.254/32
+-!
+-interface eth1
+- ip address 10.2.0.1/31
+ !
+ route-map PERMIT-ALL permit 10
+ !
+@@ -28,4 +28,4 @@
+ ip route 8.8.8.0/24 Null0
+ !
+ line vty
+-!+!
+
+== leaf1 ==  -> configs/rendered/leaf1.cfg
+--- configs/leaf1/startup.cfg
++++ configs/rendered/leaf1.cfg
+@@ -1,3 +1,4 @@
++!
+ service routing protocols model multi-agent
+ !
+ hostname leaf1
+@@ -8,30 +9,28 @@
+ vrf instance TENANT_A
+ !
+ interface Ethernet1
+-   description p2p to spine1 Eth1
+    no switchport
+    ip address 10.1.1.1/31
+ !
+ interface Ethernet2
+-   description p2p to spine2 Eth1
+    no switchport
+    ip address 10.1.2.1/31
+ !
+ interface Ethernet3
+-   description Server1 access port - VLAN 100
++   description Access port to server1 (untagged VLAN 100)
+    switchport access vlan 100
+ !
+ interface Loopback0
+-   description Router-ID and BGP source, VTEP IP
++   description Router-ID, BGP source, VTEP source
+    ip address 10.0.0.11/32
+ !
+ interface Vlan100
+-   description TENANT_A VLAN 100 anycast gateway
++   description Tenant A SVI, anycast gateway 10.100.0.1/24
+    vrf TENANT_A
+    ip address virtual 10.100.0.1/24
+ !
+ interface Vxlan1
+-   description VTEP for TENANT_A
++   description VTEP source, sourced from Loopback0; L2 VNI 10100, L3 VNI 10999
+    vxlan source-interface Loopback0
+    vxlan udp-port 4789
+    vxlan vlan 100 vni 10100
+@@ -45,12 +44,6 @@
+ router bgp 65101
+    router-id 10.0.0.11
+    no bgp default ipv4-unicast
+-   neighbor 10.1.1.0 remote-as 65001
+-   neighbor 10.1.1.0 description spine1
+-   neighbor 10.1.1.0 send-community extended
+-   neighbor 10.1.2.0 remote-as 65002
+-   neighbor 10.1.2.0 description spine2
+-   neighbor 10.1.2.0 send-community extended
+    !
+    vlan 100
+       rd 10.0.0.11:10100
+@@ -58,12 +51,8 @@
+       redistribute learned
+    !
+    address-family evpn
+-      neighbor 10.1.1.0 activate
+-      neighbor 10.1.2.0 activate
+    !
+    address-family ipv4
+-      neighbor 10.1.1.0 activate
+-      neighbor 10.1.2.0 activate
+       network 10.0.0.11/32
+    !
+    vrf TENANT_A
+
+== leaf2 ==  -> configs/rendered/leaf2.cfg
+--- configs/leaf2/startup.cfg
++++ configs/rendered/leaf2.cfg
+@@ -1,3 +1,4 @@
++!
+ service routing protocols model multi-agent
+ !
+ hostname leaf2
+@@ -18,20 +19,20 @@
+    ip address 10.1.2.3/31
+ !
+ interface Ethernet3
+-   description Server2 access port - VLAN 100
++   description Access port to server2 (untagged VLAN 100)
+    switchport access vlan 100
+ !
+ interface Loopback0
+-   description Router-ID and BGP source, VTEP IP
++   description Router-ID, BGP source, VTEP source
+    ip address 10.0.0.12/32
+ !
+ interface Vlan100
+-   description TENANT_A VLAN 100 anycast gateway
++   description Tenant A SVI, anycast gateway 10.100.0.1/24
+    vrf TENANT_A
+    ip address virtual 10.100.0.1/24
+ !
+ interface Vxlan1
+-   description VTEP for TENANT_A
++   description VTEP source, sourced from Loopback0; L2 VNI 10100, L3 VNI 10999
+    vxlan source-interface Loopback0
+    vxlan udp-port 4789
+    vxlan vlan 100 vni 10100
+
+== leaf3 ==  -> configs/rendered/leaf3.cfg
+--- configs/leaf3/startup.cfg
++++ configs/rendered/leaf3.cfg
+@@ -1,3 +1,4 @@
++!
+ service routing protocols model multi-agent
+ !
+ hostname leaf3
+@@ -18,20 +19,20 @@
+    ip address 10.1.2.5/31
+ !
+ interface Ethernet3
+-   description Server3 access port - VLAN 101
++   description Access port to server3 (untagged VLAN 101)
+    switchport access vlan 101
+ !
+ interface Loopback0
+-   description Router-ID and BGP source, VTEP IP
++   description Router-ID, BGP source, VTEP source
+    ip address 10.0.0.13/32
+ !
+ interface Vlan101
+-   description TENANT_A VLAN 101 anycast gateway
++   description Tenant A SVI, anycast gateway 10.101.0.1/24
+    vrf TENANT_A
+    ip address virtual 10.101.0.1/24
+ !
+ interface Vxlan1
+-   description VTEP for TENANT_A
++   description VTEP source, sourced from Loopback0; L2 VNI 10101, L3 VNI 10999
+    vxlan source-interface Loopback0
+    vxlan udp-port 4789
+    vxlan vlan 101 vni 10101
+
+== spine1 ==  -> configs/rendered/spine1.cfg
+--- configs/spine1/startup.cfg
++++ configs/rendered/spine1.cfg
+@@ -1,9 +1,10 @@
++!
+ service routing protocols model multi-agent
+ !
+ hostname spine1
+ !
+ interface Ethernet1
+-   description p2p to leaf1 Eth1
++   description To leaf1 Ethernet1
+    no switchport
+    ip address 10.1.1.0/31
+ !
+@@ -13,7 +14,7 @@
+    ip address 10.1.1.2/31
+ !
+ interface Ethernet3
+-   description p2p to leaf3 ethernet-1/1
++   description p2p to leaf3 Eth1
+    no switchport
+    ip address 10.1.1.4/31
+ !
+@@ -31,9 +32,6 @@
+ router bgp 65001
+    router-id 10.0.0.1
+    no bgp default ipv4-unicast
+-   neighbor 10.1.1.1 remote-as 65101
+-   neighbor 10.1.1.1 description leaf1
+-   neighbor 10.1.1.1 send-community extended
+    neighbor 10.1.1.3 remote-as 65102
+    neighbor 10.1.1.3 description leaf2
+    neighbor 10.1.1.3 send-community extended
+@@ -44,15 +42,12 @@
+    neighbor 10.2.0.1 description edge1
+    !
+    address-family evpn
+-      neighbor 10.1.1.1 activate
+-      neighbor 10.1.1.1 next-hop-unchanged
+       neighbor 10.1.1.3 activate
+       neighbor 10.1.1.3 next-hop-unchanged
+       neighbor 10.1.1.5 activate
+       neighbor 10.1.1.5 next-hop-unchanged
+    !
+    address-family ipv4
+-      neighbor 10.1.1.1 activate
+       neighbor 10.1.1.3 activate
+       neighbor 10.1.1.5 activate
+       neighbor 10.2.0.1 activate
+
+== spine2 ==  -> configs/rendered/spine2.cfg
+--- configs/spine2/startup.cfg
++++ configs/rendered/spine2.cfg
+@@ -1,9 +1,10 @@
++!
+ service routing protocols model multi-agent
+ !
+ hostname spine2
+ !
+ interface Ethernet1
+-   description p2p to leaf1 Eth2
++   description To leaf1 Ethernet2
+    no switchport
+    ip address 10.1.2.0/31
+ !
+@@ -13,7 +14,7 @@
+    ip address 10.1.2.2/31
+ !
+ interface Ethernet3
+-   description p2p to leaf3 ethernet-1/2
++   description p2p to leaf3 Eth2
+    no switchport
+    ip address 10.1.2.4/31
+ !
+@@ -26,9 +27,6 @@
+ router bgp 65002
+    router-id 10.0.0.2
+    no bgp default ipv4-unicast
+-   neighbor 10.1.2.1 remote-as 65101
+-   neighbor 10.1.2.1 description leaf1
+-   neighbor 10.1.2.1 send-community extended
+    neighbor 10.1.2.3 remote-as 65102
+    neighbor 10.1.2.3 description leaf2
+    neighbor 10.1.2.3 send-community extended
+@@ -37,15 +35,12 @@
+    neighbor 10.1.2.5 send-community extended
+    !
+    address-family evpn
+-      neighbor 10.1.2.1 activate
+-      neighbor 10.1.2.1 next-hop-unchanged
+       neighbor 10.1.2.3 activate
+       neighbor 10.1.2.3 next-hop-unchanged
+       neighbor 10.1.2.5 activate
+       neighbor 10.1.2.5 next-hop-unchanged
+    !
+    address-family ipv4
+-      neighbor 10.1.2.1 activate
+       neighbor 10.1.2.3 activate
+       neighbor 10.1.2.5 activate
+       network 10.0.0.2/32
+

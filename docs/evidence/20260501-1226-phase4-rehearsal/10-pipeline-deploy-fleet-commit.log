@@ -1,0 +1,257 @@
+===== STEP 3c: deploy --commit (full fleet) =====
++vlan 100
++   name TENANT_A_VLAN100
++!
++vrf instance TENANT_A
+ !
+ interface Ethernet1
++   description p2p to spine1 Eth2
++   no switchport
++   ip address 10.1.1.3/31
+ !
+ interface Ethernet2
++   description p2p to spine2 Eth2
++   no switchport
++   ip address 10.1.2.3/31
+ !
+ interface Ethernet3
++   description Access port to server2 (untagged VLAN 100)
++   switchport access vlan 100
++!
++interface Loopback0
++   description Router-ID, BGP source, VTEP source
++   ip address 10.0.0.12/32
++!
++interface Vlan100
++   description Tenant A SVI, anycast gateway 10.100.0.1/24
++   vrf TENANT_A
++   ip address virtual 10.100.0.1/24
++!
++interface Vxlan1
++   description VTEP source, sourced from Loopback0; L2 VNI 10100, L3 VNI 10999
++   vxlan source-interface Loopback0
++   vxlan udp-port 4789
++   vxlan vlan 100 vni 10100
++   vxlan vrf TENANT_A vni 10999
++!
++ip virtual-router mac-address 02:1c:73:00:00:64
+ !
+-no ip routing
++ip routing
++ip routing vrf TENANT_A
++!
++router bgp 65102
++   router-id 10.0.0.12
++   no bgp default ipv4-unicast
++   neighbor 10.1.1.2 remote-as 65001
++   neighbor 10.1.1.2 description spine1
++   neighbor 10.1.1.2 send-community extended
++   neighbor 10.1.2.2 remote-as 65002
++   neighbor 10.1.2.2 description spine2
++   neighbor 10.1.2.2 send-community extended
++   !
++   vlan 100
++      rd 10.0.0.12:10100
++      route-target both 10100:10100
++      redistribute learned
++   !
++   address-family evpn
++      neighbor 10.1.1.2 activate
++      neighbor 10.1.2.2 activate
++   !
++   address-family ipv4
++      neighbor 10.1.1.2 activate
++      neighbor 10.1.2.2 activate
++      network 10.0.0.12/32
++   !
++   vrf TENANT_A
++      rd 10.0.0.12:10999
++      route-target import evpn 10999:10999
++      route-target export evpn 10999:10999
++      router-id 10.0.0.12
++      redistribute connected
+
++vlan 101
++   name TENANT_A_VLAN101
++!
++vrf instance TENANT_A
+ !
+ interface Ethernet1
++   description p2p to spine1 Eth3
++   no switchport
++   ip address 10.1.1.5/31
+ !
+ interface Ethernet2
++   description p2p to spine2 Eth3
++   no switchport
++   ip address 10.1.2.5/31
+ !
+ interface Ethernet3
++   description Access port to server3 (untagged VLAN 101)
++   switchport access vlan 101
++!
++interface Loopback0
++   description Router-ID, BGP source, VTEP source
++   ip address 10.0.0.13/32
++!
++interface Vlan101
++   description Tenant A SVI, anycast gateway 10.101.0.1/24
++   vrf TENANT_A
++   ip address virtual 10.101.0.1/24
++!
++interface Vxlan1
++   description VTEP source, sourced from Loopback0; L2 VNI 10101, L3 VNI 10999
++   vxlan source-interface Loopback0
++   vxlan udp-port 4789
++   vxlan vlan 101 vni 10101
++   vxlan vrf TENANT_A vni 10999
++!
++ip virtual-router mac-address 02:1c:73:00:00:65
+ !
+-no ip routing
++ip routing
++ip routing vrf TENANT_A
++!
++router bgp 65103
++   router-id 10.0.0.13
++   no bgp default ipv4-unicast
++   neighbor 10.1.1.4 remote-as 65001
++   neighbor 10.1.1.4 description spine1
++   neighbor 10.1.1.4 send-community extended
++   neighbor 10.1.2.4 remote-as 65002
++   neighbor 10.1.2.4 description spine2
++   neighbor 10.1.2.4 send-community extended
++   !
++   vlan 101
++      rd 10.0.0.13:10101
++      route-target both 10101:10101
++      redistribute learned
++   !
++   address-family evpn
++      neighbor 10.1.1.4 activate
++      neighbor 10.1.2.4 activate
++   !
++   address-family ipv4
++      neighbor 10.1.1.4 activate
++      neighbor 10.1.2.4 activate
++      network 10.0.0.13/32
++   !
++   vrf TENANT_A
++      rd 10.0.0.13:10999
++      route-target import evpn 10999:10999
++      route-target export evpn 10999:10999
++      router-id 10.0.0.13
++      redistribute connected
+^^^^ END deploy ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* spine1 ** changed : True *****************************************************
+vvvv deploy ** changed : True vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv INFO
+COMMITTED:
+interface Ethernet1
++   description p2p to leaf1 Eth1
++   no switchport
++   ip address 10.1.1.0/31
+ !
+ interface Ethernet2
++   description p2p to leaf2 Eth1
++   no switchport
++   ip address 10.1.1.2/31
+ !
+ interface Ethernet3
++   description p2p to leaf3 Eth1
++   no switchport
++   ip address 10.1.1.4/31
+ !
+ interface Ethernet4
++   description p2p to edge1 eth1
++   no switchport
++   ip address 10.2.0.0/31
++!
++interface Loopback0
++   description Router-ID and BGP source
++   ip address 10.0.0.1/32
+ !
+-no ip routing
++ip routing
++!
++router bgp 65001
++   router-id 10.0.0.1
++   no bgp default ipv4-unicast
++   neighbor 10.1.1.1 remote-as 65101
++   neighbor 10.1.1.1 description leaf1
++   neighbor 10.1.1.1 send-community extended
++   neighbor 10.1.1.3 remote-as 65102
++   neighbor 10.1.1.3 description leaf2
++   neighbor 10.1.1.3 send-community extended
++   neighbor 10.1.1.5 remote-as 65103
++   neighbor 10.1.1.5 description leaf3
++   neighbor 10.1.1.5 send-community extended
++   neighbor 10.2.0.1 remote-as 65200
++   neighbor 10.2.0.1 description edge1
++   !
++   address-family evpn
++      neighbor 10.1.1.1 activate
++      neighbor 10.1.1.1 next-hop-unchanged
++      neighbor 10.1.1.3 activate
++      neighbor 10.1.1.3 next-hop-unchanged
++      neighbor 10.1.1.5 activate
++      neighbor 10.1.1.5 next-hop-unchanged
++   !
++   address-family ipv4
++      neighbor 10.1.1.1 activate
++      neighbor 10.1.1.3 activate
++      neighbor 10.1.1.5 activate
++      neighbor 10.2.0.1 activate
++      network 10.0.0.1/32[0m
+^^^^ END deploy ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* spine2 ** changed : True *****************************************************
+vvvv deploy ** changed : True vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv INFO
+COMMITTED:
+interface Ethernet1
++   description p2p to leaf1 Eth2
++   no switchport
++   ip address 10.1.2.0/31
+ !
+ interface Ethernet2
++   description p2p to leaf2 Eth2
++   no switchport
++   ip address 10.1.2.2/31
+ !
+ interface Ethernet3
++   description p2p to leaf3 Eth2
++   no switchport
++   ip address 10.1.2.4/31
++!
++interface Loopback0
++   description Router-ID and BGP source
++   ip address 10.0.0.2/32
+ !
+-no ip routing
++ip routing
++!
++router bgp 65002
++   router-id 10.0.0.2
++   no bgp default ipv4-unicast
++   neighbor 10.1.2.1 remote-as 65101
++   neighbor 10.1.2.1 description leaf1
++   neighbor 10.1.2.1 send-community extended
++   neighbor 10.1.2.3 remote-as 65102
++   neighbor 10.1.2.3 description leaf2
++   neighbor 10.1.2.3 send-community extended
++   neighbor 10.1.2.5 remote-as 65103
++   neighbor 10.1.2.5 description leaf3
++   neighbor 10.1.2.5 send-community extended
++   !
++   address-family evpn
++      neighbor 10.1.2.1 activate
++      neighbor 10.1.2.1 next-hop-unchanged
++      neighbor 10.1.2.3 activate
++      neighbor 10.1.2.3 next-hop-unchanged
++      neighbor 10.1.2.5 activate
++      neighbor 10.1.2.5 next-hop-unchanged
++   !
++   address-family ipv4
++      neighbor 10.1.2.1 activate
++      neighbor 10.1.2.3 activate
++      neighbor 10.1.2.5 activate
++      network 10.0.0.2/32
+^^^^ END deploy ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -12,7 +12,6 @@ Thumbs.db
 *.iml
 
 # ---- logs / temp / cache ----
-*.log
 logs/
 *.tmp
 *.cache
@@ -85,3 +84,6 @@ docker-compose.override.yml
 *.snm
 *.vrb
 main.pdf
+
+# ---- Evidence Folder ----
+!docs/evidence/**/*.log

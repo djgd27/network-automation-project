@@ -241,6 +241,5 @@ Without a registered runner it queues indefinitely. The local pipeline
 
 ## Further documentation
 
-- **Final report**: `docs/report/main.pdf`
 - **Architecture & design decisions**: `docs/architecture.md`
-- **Day-by-day work log**: `docs/journal.md`
+- **Work log**: `docs/journal.md`
